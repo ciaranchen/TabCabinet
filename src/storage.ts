@@ -1,61 +1,55 @@
-// Define your storage data here
-export interface Storage {} // eslint-disable-line
+import {genObjectId} from "./utils";
 
-export function getStorageData(): Promise<Storage> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(null, (result) => {
-      if (chrome.runtime.lastError) {
-        return reject(chrome.runtime.lastError);
-      }
+export class BrowserTabGroup {
+    date: Date;
+    tabs: { title: string, url: string }[];
+    isLock: boolean;
+    groupTitle: string;
+    id: string;
 
-      return resolve(result as Storage);
-    });
-  });
+    // makes a tab group, filters it
+    // from the array of Tab objects it makes an object with date and the array
+    fromTabArr(tabsArr: chrome.tabs.Tab[]) {
+        this.id = `tabGroup-${genObjectId()}`;
+        this.date = new Date();
+        this.tabs = tabsArr.map((tab) => ({
+            title: tab.title.replace(/\p{Cc}/, ''),
+            url: tab.url
+        }));
+        this.isLock = false;
+        this.groupTitle = '';
+    }
 }
 
-export function setStorageData(data: Storage): Promise<void> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.set(data, () => {
-      if (chrome.runtime.lastError) {
-        return reject(chrome.runtime.lastError);
-      }
-
-      return resolve();
+export function loadAllTabGroup(): Promise<BrowserTabGroup[]> {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get("tabGroupIds", function (storage: { tabGroupIds: string[] }) {
+            if (!storage.tabGroupIds) reject();
+            chrome.storage.local.get(storage.tabGroupIds, (groups: {[p:string]: BrowserTabGroup}) => {
+                resolve(Object.values(groups));
+            });
+        });
     });
-  });
 }
 
-export function getStorageItem<Key extends keyof Storage>(
-  key: Key,
-): Promise<Storage[Key]> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get([key], (result) => {
-      if (chrome.runtime.lastError) {
-        return reject(chrome.runtime.lastError);
-      }
+export function saveTabGroup(tab: BrowserTabGroup) {
+    return new Promise<void>((resolve , reject) => {
+        // 存储Id
+        chrome.storage.local.get("tabGroupIds", function (storage: { tabGroupIds: string[] }) {
+            let tabGroupIds: string[] = [];
+            if (storage.tabGroupIds) {
+                tabGroupIds = storage.tabGroupIds;
+            }
+            tabGroupIds.push(tab.id);
+            // TODO: handle id 重复的情况
+            chrome.storage.local.set({tabGroupIds: tabGroupIds});
+        });
 
-      return resolve((result as Storage)[key]);
+        // 在指定Id处存入
+        // TODO: handle 无法存入的情况
+        const obj: { [p: string]: BrowserTabGroup } = {};
+        obj[tab.id.toString()] = tab;
+        chrome.storage.local.set(obj);
+        resolve();
     });
-  });
-}
-
-export function setStorageItem<Key extends keyof Storage>(
-  key: Key,
-  value: Storage[Key],
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.set({ [key]: value }, () => {
-      if (chrome.runtime.lastError) {
-        return reject(chrome.runtime.lastError);
-      }
-
-      return resolve();
-    });
-  });
-}
-
-export async function initializeStorageWithDefaults(defaults: Storage) {
-  const currentStorageData = await getStorageData();
-  const newStorageData = Object.assign({}, defaults, currentStorageData);
-  await setStorageData(newStorageData);
 }

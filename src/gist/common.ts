@@ -55,9 +55,7 @@ export class GistApi {
                 this.gistId = storage.this.gistId;
                 if (updateAction) {
                     loadAllTabGroup()
-                        .then(r => this.updateGist(r))
-                        // reject 的情况也上传一个空表
-                        .catch(() => this.updateGist([]));
+                        .then(r => this.updateGist(r));
                 }
             } else {
                 console.log(`没有保存了${this.name}的gistId`)

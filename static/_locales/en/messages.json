@@ -442,5 +442,20 @@
 	},
 	"input": {
 		"message": "Please input "
+	},
+	"Settings": {
+		"message": "Settings"
+	},
+	"ImportsExports": {
+		"message": "Imports & Exports"
+	},
+	"deleteAfterOpenTabGroup": {
+		"message": "Delete Tab Group After Open it"
+	},
+	"Logs": {
+		"message": "Log"
+	},
+	"openOptionsAfterSendTab": {
+		"message": "Open TabMonster After Send Tab"
 	}
 }

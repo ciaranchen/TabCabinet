@@ -442,5 +442,20 @@
 	},
 	"input": {
 		"message": "请输入"
+	},
+	"Settings": {
+		"message": "设置"
+	},
+	"ImportsExports": {
+		"message": "导入及导出"
+	},
+	"deleteAfterOpenTabGroup": {
+		"message": "在打开标签组后将其删除"
+	},
+	"Logs": {
+		"message": "日志"
+	},
+	"openOptionsAfterSendTab": {
+		"message": "在发送标签后打开 TabMonster"
 	}
 }

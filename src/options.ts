@@ -25,10 +25,14 @@ let settings, githubApi: GithubApi, giteeApi: GiteeApi;
 updateWithSettingsChanged();
 
 chrome.runtime.onMessage.addListener((msg: {action: string}) => {
-    updateWithSettingsChanged();
+    switch (msg.action) {
+        case "settings-changed":
+            updateWithSettingsChanged();
+            break;
+    }
 });
 
-function updateWithSettingsChanged() {
+export function updateWithSettingsChanged() {
     loadSettings().then(r => {
         settings = r;
         githubApi = new GithubApi(settings.githubToken, settings.githubId);
@@ -150,7 +154,7 @@ function pullGist(api: GistApi) {
 
     api.pullData().then((r: {tabGroups: BrowserTabGroup[], settings: Settings}) => {
         saveSettings(r.settings);
-        for (let group of r.tabGroups) {
+        for (const group of r.tabGroups) {
             chrome.storage.local.set({[group.id]: group});
         }
         // TODO: 清除Storage中的原有数据。

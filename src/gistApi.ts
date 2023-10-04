@@ -1,4 +1,4 @@
-import {BrowserTabGroup, loadAllTabGroup, saveSettings, Settings} from "./storage";
+import {BrowserTabGroup, saveSettings, Settings} from "./storage";
 
 export class GistApi {
     gistToken: string;
@@ -19,7 +19,7 @@ export class GistApi {
 
     gistDataConstructor(tabGroups: BrowserTabGroup[], settings: Settings) {
         return {
-            "description": "TabMonster Data Storage", "public": false, "files": {
+            "description": "TabCabinet Data Storage", "public": false, "files": {
                 "TabGroups.json": {"content": JSON.stringify(tabGroups)},
                 "Settings.json": {"content": JSON.stringify(settings)}
             }
@@ -145,6 +145,7 @@ export class GistApi {
     }
 
     checkAutoSync() {
+        console.log("unfinished.");
     }
 }
 

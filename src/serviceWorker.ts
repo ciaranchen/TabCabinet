@@ -1,5 +1,5 @@
 import {GithubApi, GiteeApi} from "./gistApi";
-import {saveTabGroup, BrowserTabGroup, updateTabGroup, tabGroupFromTabArr, loadSettings, Settings} from "./storage";
+import {saveTabGroup, tabGroupFromTabArr, loadSettings, Settings} from "./storage";
 
 let settings: Settings, githubApi: GithubApi, giteeApi: GiteeApi;
 
@@ -17,7 +17,7 @@ chrome.runtime.onMessage.addListener((req, sendRes) => {
     }
 });
 
-chrome.action.onClicked.addListener((tab) => {
+chrome.action.onClicked.addListener(() => {
     chrome.runtime.openOptionsPage();
 })
 
@@ -91,24 +91,9 @@ function closeTabs(tabsArr: chrome.tabs.Tab[]) {
 }
 
 
-// 打开background页
-function openBackgroundPage() {
-    chrome.tabs.query({url: "chrome-extension://*/options.html*", currentWindow: true}, function (tab) {
-        if (tab.length >= 1) {
-            chrome.tabs.move(tab[0].id, {index: 0}, () => {
-                chrome.tabs.highlight({tabs: 0});
-            });
-            chrome.tabs.reload(tab[0].id);
-        } else {
-            chrome.tabs.create({index: 0, url: chrome.runtime.getURL('options.html')});
-        }
-    });
-}
-
-
 // 创建页面中的右键菜单，发送当前tab
 chrome.contextMenus.create({
-    id: "cloudSkyMonster-SendCurrentTab", title: `${chrome.i18n.getMessage("sendCurrentTab")}`,
+    id: "tabCabinet-SendCurrentTab", title: `${chrome.i18n.getMessage("sendCurrentTab")}`,
 });
 
 chrome.contextMenus.create({
@@ -132,7 +117,7 @@ chrome.contextMenus.create({
 
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
     console.log(info, tab);
-    if (info.menuItemId === "cloudSkyMonster-SendCurrentTab") {
+    if (info.menuItemId === "tabCabinet-SendCurrentTab") {
         chrome.storage.local.get(function (storage) {
             chrome.tabs.query({
                 url: ["https://*/*", "http://*/*"], highlighted: true, currentWindow: true
@@ -145,27 +130,27 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
                 if (tabsArr.length > 0) {
                     saveTabs(tabsArr);
                     if (openBackgroundAfterSendTab === "yes") {
-                        openBackgroundPage();
+                        chrome.runtime.openOptionsPage();
                     }
                     closeTabs(tabsArr);
                 } else {
                     if (openBackgroundAfterSendTab === "yes") {
-                        openBackgroundPage();
+                        chrome.runtime.openOptionsPage();
                     }
                 }
 
             });
         });
     } else if (info.menuItemId === '4') {
-        openBackgroundPage();
+        chrome.runtime.openOptionsPage();
     } else if (info.menuItemId === '5') {
         chrome.tabs.query({url: ["https://*/*", "http://*/*"], currentWindow: true}, function (tabs) {
             if (tabs.length > 0) {
                 saveTabs(tabs);
-                openBackgroundPage();
+                chrome.runtime.openOptionsPage();
                 closeTabs(tabs);
             } else {
-                openBackgroundPage();
+                chrome.runtime.openOptionsPage();
             }
         });
     } else if (info.menuItemId === '6') {
@@ -182,12 +167,12 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
                 if (req.length > 0) {
                     saveTabs(req);
                     if (openBackgroundAfterSendTab === "yes") {
-                        openBackgroundPage();
+                        chrome.runtime.openOptionsPage();
                     }
                     closeTabs(req);
                 } else {
                     if (openBackgroundAfterSendTab === "yes") {
-                        openBackgroundPage();
+                        chrome.runtime.openOptionsPage();
                     }
                 }
             });
@@ -196,10 +181,10 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
         chrome.tabs.query({url: ["https://*/*", "http://*/*"], active: false, currentWindow: true}, function (req) {
             if (req.length > 0) {
                 saveTabs(req);
-                openBackgroundPage();
+                chrome.runtime.openOptionsPage();
                 closeTabs(req);
             } else {
-                openBackgroundPage();
+                chrome.runtime.openOptionsPage();
             }
         });
     }

@@ -118,14 +118,14 @@ export const defaultSettings: Settings = {
 }
 
 export function saveSettings(settings: Settings) {
-    return chrome.storage.sync.set({TabMonsterSettings: settings}).then(() => chrome.runtime.sendMessage({action: 'settings-changed'}));
+    return chrome.storage.sync.set({TabCabinetSettings: settings}).then(() => chrome.runtime.sendMessage({action: 'settings-changed'}));
 }
 
 export function loadSettings() {
     return new Promise<Settings>(resolve => {
-        chrome.storage.sync.get("TabMonsterSettings", (storage: { TabMonsterSettings: Settings }) => {
-            if (!storage.TabMonsterSettings) resolve(defaultSettings);
-            const settings = storage.TabMonsterSettings;
+        chrome.storage.sync.get("TabCabinetSettings", (storage: { TabCabinetSettings: Settings }) => {
+            if (!storage.TabCabinetSettings) resolve(defaultSettings);
+            const settings = storage.TabCabinetSettings;
             resolve(settings);
         });
     });

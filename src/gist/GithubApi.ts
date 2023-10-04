@@ -1,9 +1,9 @@
 import {GistApi} from "./common";
 import {BrowserTabGroup} from "../storage";
+
 export class GithubApi extends GistApi {
     name = 'github';
     apiUrl = "https://api.github.com";
-
 
     protected i18nGetMessage(name: string): string {
         const msg_map = new Map([
@@ -22,7 +22,7 @@ export class GithubApi extends GistApi {
 
     protected updateGist(tabGroups: BrowserTabGroup[]) {
         console.log("更新github的gist")
-        this.gistLog.push(`${chrome.i18n.getMessage("directUpdate")}`)
+        console.info(`${chrome.i18n.getMessage("directUpdate")}`)
         const _content = JSON.stringify(tabGroups);
         const data = {
             "description": "Tab Monster Data", "public": false, "files": {
@@ -46,10 +46,10 @@ export class GithubApi extends GistApi {
             })
             .then(data => {
                 chrome.storage.local.set({"taskJsUrl": data.files['brower_tasks.js'].raw_url});
-                this.gistLog.push(`${chrome.i18n.getMessage("updateSuccess")}`);
+                console.info(`${chrome.i18n.getMessage("updateSuccess")}`);
             })
             .catch(error => {
-                this.gistLog.push(`${chrome.i18n.getMessage("updateFailed")}-->${error.message}`);
+                console.info(`${chrome.i18n.getMessage("updateFailed")}-->${error.message}`);
             })
             .finally(() => {
                 this.gistStatus = undefined;

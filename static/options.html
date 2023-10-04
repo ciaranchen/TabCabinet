@@ -58,67 +58,42 @@
 </nav>
 
 <div class="container-fluid tab-content">
-    <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab">
-        <div class="container m-3">
+    <div class="tab-pane fade show active m-3" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab">
+        <div class="container">
             <div class="row">
                 <div class="col">
-                    <button type="button" class="btn btn-light"><span class="i18n" title="pushToGithubGist"></span></button>
+                    <button type="button" class="btn btn-light" id="pushToGithubGist">
+                        <span class="i18n" title="pushToGithubGist"></span>
+                    </button>
                 </div>
                 <div class="col">
-                    <button type="button" class="btn btn-light"><span class="i18n" title="pullFromGithubGist"></span></button>
+                    <button type="button" class="btn btn-light" id="pullFromGithubGist">
+                        <span class="i18n" title="pullFromGithubGist"></span>
+                    </button>
                 </div>
                 <div class="col">
-                    <button type="button" class="btn btn-light"><span class="i18n" title="pushToGiteeGist"></span></button>
+                    <button type="button" class="btn btn-light" id="pushToGiteeGist">
+                        <span class="i18n" title="pushToGiteeGist"></span>
+                    </button>
                 </div>
                 <div class="col">
-                    <button type="button" class="btn btn-light"><span class="i18n" title="pullFromGiteeGist"></span></button>
+                    <button type="button" class="btn btn-light" id="pullFromGiteeGist">
+                        <span class="i18n" title="pullFromGiteeGist"></span>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!--        React Root-->
+        <!-- React Root-->
         <div id="tabs-container"></div>
     </div>
 
-    <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab">
-        <div class="option container">
-            <h2> <span class="i18n" title="Settings"></span> </h2>
-            <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" role="switch" id="deleteAfterOpenTabGroup">
-                <label class="form-check-label" for="deleteAfterOpenTabGroup">
-                    <span class="i18n" title="deleteAfterOpenTabGroup"></span>
-                </label>
-            </div>
-            <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" role="switch" id="openOptionsAfterSendTab">
-                <label class="form-check-label" for="openOptionsAfterSendTab">
-                    <span class="i18n" title="openOptionsAfterSendTab"></span>
-                </label>
-            </div>
-
-            <div class="mb-3 row">
-                <label for="githubToken" class="col-sm-2 col-form-label"><span class="i18n" title="githubToken"></span></label>
-                <div class="col-sm-5">
-                    <input type="password" class="form-control" id="githubToken" placeholder="Github Token">
-                </div>
-            </div>
-
-            <div class="mb-3 row">
-                <label for="giteeToken" class="col-sm-2 col-form-label"><span class="i18n" title="giteeToken"></span></label>
-                <div class="col-sm-5">
-                    <input type="password" class="form-control" id="giteeToken" placeholder="Gitee Token">
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary"><span class="i18n" title="saveButtonValue"></span></button>
-
-            <div id="saved"><span class="i18n" title="savedValue"></span></div>
-        </div>
-
-
+    <div class="tab-pane fade m-3" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab">
+        <!-- React Root -->
+        <div id="settings-container"></div>
     </div>
 
-    <div class="tab-pane fade" id="imports-exports-tab-pane" role="tabpanel" aria-labelledby="imports-exports-tab">
+    <div class="tab-pane fade m-3" id="imports-exports-tab-pane" role="tabpanel" aria-labelledby="imports-exports-tab">
         <div class="container theme-showcase" role="main">
             <div>
                 <div id="importOneTab">
@@ -159,8 +134,8 @@ https://www.google.com | Google
                     <h3><span class="i18n" title="hideShowExportFunction"></span></h3>
                     <textarea id="exportTextarea" style="width: 100%; height: 200px; margin-top:5px"></textarea>
                     <div style="margin-bottom:5px">
-                        <button id="export" type="button" class="btn btn-primary"><span class="i18n"
-                                                                                        title="exportToLocal"></span>
+                        <button id="exportDefaultMode" type="button" class="btn btn-primary"><span class="i18n"
+                                                                                                   title="exportToLocal"></span>
                         </button>
                         <span><span class="i18n" title="exportWarn"></span></span>
                     </div>

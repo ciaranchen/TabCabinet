@@ -23,7 +23,7 @@ export class GiteeApi extends GistApi {
     // 更新gitee的gist
     protected updateGist(tabGroups: BrowserTabGroup[]) {
         console.log("更新 gitee 的gist")
-        this.gistLog.push(`${chrome.i18n.getMessage("directUpdate")}`)
+        console.info(`${chrome.i18n.getMessage("directUpdate")}`)
         const _content = JSON.stringify(tabGroups);
         // TODO: get settings
         const data = {
@@ -48,10 +48,10 @@ export class GiteeApi extends GistApi {
             })
             .then(data => {
                 chrome.storage.local.set({"taskJsUrl": data.files['brower_tasks.js'].raw_url});
-                this.gistLog.push(`${chrome.i18n.getMessage("updateSuccess")}`);
+                console.info(`${chrome.i18n.getMessage("updateSuccess")}`);
             })
             .catch(error => {
-                this.gistLog.push(`${chrome.i18n.getMessage("updateFailed")}-->${error.message}`);
+                console.info(`${chrome.i18n.getMessage("updateFailed")}-->${error.message}`);
             })
             .finally(() => {
                 this.gistStatus = undefined;

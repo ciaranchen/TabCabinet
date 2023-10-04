@@ -2,13 +2,28 @@ import '../styles/options.scss';
 
 // Import all of Bootstrap's JS
 import 'bootstrap';
+import {createElement} from "react";
 import {createRoot} from "react-dom/client";
 
-import TabsApp from './Apps/TabsApp'
-import {createElement} from "react";
 import {GithubApi} from "./gist/GithubApi";
 import {GiteeApi} from "./gist/GiteeApi";
-import {importOneTab} from "./imports";
+import {exportDefault, importDefault, importOneTab} from "./imports";
+import TabsApp from './Apps/TabsApp'
+import SettingsApp from "./Apps/SettingsApp";
+import {loadSettings, Settings} from "./storage";
+
+let settings: Settings;
+
+
+// Load React App for TabGroups
+const tabsContainerNode = document.getElementById("tabs-container");
+const tabsContainerRoot = createRoot(tabsContainerNode);
+tabsContainerRoot.render(createElement(TabsApp));
+// Load React App for Settings
+const settingsContainerNode = document.getElementById("settings-container");
+const settingsContainerRoot = createRoot(settingsContainerNode);
+settingsContainerRoot.render(createElement(SettingsApp));
+
 
 document.addEventListener('DOMContentLoaded', function () {
     // 处理i18n字串
@@ -32,22 +47,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-
-// Load React App for TabGroups
-const domNode = document.getElementById("tabs-container");
-const root = createRoot(domNode);
-root.render(createElement(TabsApp));
+// 加载Settings，初始化Api
+let githubApi, giteeApi;
+loadSettings().then(r => {
+    settings = r;
+    githubApi = new GithubApi(settings.githubToken);
+    giteeApi = new GiteeApi(settings.giteeToken);
+}).then()
 
 
 // 检查API状态
-// 检查跟github的通讯是否正常
-new GithubApi().checkCommunicationStatus(checkStatusCallback);
-// 检查跟gitee的通讯是否正常
-new GiteeApi().checkCommunicationStatus(checkStatusCallback);
-
 async function checkStatusCallback(request: Promise<Response>, api_name: string, status_elem_id: string, success: string, failed: string) {
     try {
-        let response = await request;
+        const response = await request;
         if (response.ok) {
             console.log(`与 ${api_name} 通信正常！`);
             await response.json();
@@ -64,6 +76,11 @@ async function checkStatusCallback(request: Promise<Response>, api_name: string,
     }
 }
 
+// 检查跟github的通讯是否正常
+// new GithubApi().checkCommunicationStatus(checkStatusCallback);
+// 检查跟gitee的通讯是否正常
+// new GiteeApi().checkCommunicationStatus(checkStatusCallback);
+
 
 // 检查存储空间用量
 chrome.storage.local.get(null, function (items) {
@@ -75,8 +92,17 @@ chrome.storage.local.get(null, function (items) {
 });
 
 
-
 // 实现Imports和Exports的绑定
 const onetabImportButton = document.getElementById("importOnetabMode");
 onetabImportButton.onclick = importOneTab;
+const defaultImportButton = document.getElementById("importDefaultMode");
+defaultImportButton.onclick = importDefault;
+const exportDefaultButton = document.getElementById("exportDefaultMode");
+exportDefaultButton.onclick = exportDefault;
+
+
+// Handle Gist
+const pushGithubButton = document.getElementById("pushToGithubGist");
+const pushGiteeButton = document.getElementById("pushToGiteeGist");
+pushGiteeButton
 

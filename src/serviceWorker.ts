@@ -1,7 +1,21 @@
-import {GiteeApi} from "./gist/GiteeApi";
-import {GithubApi} from "./gist/GithubApi";
-import {saveTabGroup, BrowserTabGroup} from "./storage";
+import {GithubApi, GiteeApi} from "./gistApi";
+import {saveTabGroup, BrowserTabGroup, updateTabGroup, tabGroupFromTabArr, loadSettings, Settings} from "./storage";
 
+let settings: Settings, githubApi: GithubApi, giteeApi: GiteeApi;
+
+loadSettings().then(s => {
+    settings = s;
+});
+
+chrome.runtime.onMessage.addListener((req, sendRes) => {
+    switch (req.action) {
+        case "settings-changed":
+            loadSettings().then(s => {
+                settings = s;
+            });
+            break;
+    }
+});
 
 chrome.action.onClicked.addListener((tab) => {
     chrome.runtime.openOptionsPage();
@@ -43,18 +57,25 @@ chrome.alarms.create("checkAutoSyncGithub", {delayInMinutes: 90, periodInMinutes
 // 持续监听响应定时任务
 chrome.alarms.onAlarm.addListener(function (alarm) {
     if (alarm.name === "checkAutoSyncGitee") {
-        console.log("自动同步gitee")
-        new GiteeApi().checkAutoSync();
+        if (giteeApi) {
+            console.log("自动同步gitee")
+            giteeApi.checkAutoSync();
+        }
     }
     if (alarm.name === "checkAutoSyncGithub") {
-        console.log("自动同步github")
-        new GithubApi().checkAutoSync();
+        if (githubApi) {
+            console.log("自动同步github")
+            githubApi.checkAutoSync();
+        }
     }
 });
 
 function saveTabs(tabsArr: chrome.tabs.Tab[]) {
-    const tab_group = new BrowserTabGroup();
-    tab_group.fromTabArr(tabsArr);
+    const tab_group = tabGroupFromTabArr(tabsArr.map(tab => ({
+        title: tab.title,
+        url: tab.url,
+        id: tab.id
+    })));
     saveTabGroup(tab_group);
 }
 
@@ -83,7 +104,6 @@ function openBackgroundPage() {
         }
     });
 }
-
 
 
 // 创建页面中的右键菜单，发送当前tab
@@ -149,6 +169,7 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
             }
         });
     } else if (info.menuItemId === '6') {
+
         chrome.storage.local.get(function (storage) {
             const opts = storage.options
             let openBackgroundAfterSendTab = "yes"

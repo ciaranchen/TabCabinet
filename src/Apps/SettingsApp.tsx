@@ -1,16 +1,11 @@
 import * as React from 'react';
 import {useEffect, useState} from "react";
-import {loadSettings, saveSettings, Settings} from "../storage";
+import {defaultSettings, loadSettings, saveSettings, Settings} from "../storage";
 
 
 
 export default function SettingsApp() {
-    const [settings, setSettings] = useState<Settings>({
-        deleteAfterOpenTabGroup: false,
-        openOptionsAfterSendTab: true,
-        githubToken: '',
-        giteeToken: ''
-    });
+    const [settings, setSettings] = useState<Settings>(defaultSettings);
 
     useEffect(() => {
         loadSettings().then(r => setSettings(r));
@@ -22,10 +17,6 @@ export default function SettingsApp() {
             ...prevState,
             [name]: type === 'checkbox' ? checked : value,
         }));
-    }
-
-    const debug = () => {
-        console.log(settings);
     }
 
     const handleSubmit = (event: React.FormEvent) => {
@@ -77,7 +68,6 @@ export default function SettingsApp() {
             </button>
         </form>
 
-        <button className="btn btn-info" onClick={debug}>Debug</button>
 
         <div id="saved"><span className="i18n" title="savedValue"></span></div>
 

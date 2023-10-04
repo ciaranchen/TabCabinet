@@ -1,4 +1,4 @@
-import {BrowserTabGroup, loadAllTabGroup, updateTabGroup} from "./storage";
+import {BrowserTab, BrowserTabGroup, loadAllTabGroup, tabGroupFromTabArr, updateTabGroup} from "./storage";
 
 function importTabGroupIntoStorage(tabGroups: BrowserTabGroup[]) {
     // 存储Id
@@ -22,15 +22,12 @@ export function importOneTab() {
     console.log(importValue);
     const content = importValue.split('\n');
     const tabGroups: BrowserTabGroup[] = [];
-    let tabArr: { title: string, url: string, id: number }[] = [];
+    let tabArr: BrowserTab[] = [];
 
     for (const line of content) {
         if (line.trim() === "") {
-            const tabGroup = new BrowserTabGroup();
-            console.log(tabArr)
             // fromTabArr 构造一个空的tabGroup
-            tabGroup.fromTabArr([]);
-            tabGroup.tabs = tabArr;
+            const tabGroup = tabGroupFromTabArr(tabArr);
             tabArr = [];
 
             tabGroups.push(tabGroup);
@@ -73,8 +70,7 @@ export function importDefault() {
             }
         } else if (line.trim() !== "") {
             const lineList = line.split('|');
-            tabGroup = new BrowserTabGroup();
-            tabGroup.fromTabArr([]);
+            tabGroup = tabGroupFromTabArr([]);
             tabGroup.groupTitle = lineList[0].trim()
             tabGroup.isLock = lineList[1].trim() === "锁定";
         }

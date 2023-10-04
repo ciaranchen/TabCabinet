@@ -12,6 +12,17 @@ export default function TabsApp() {
         });
     }, []);
 
+    useEffect(() => {
+        chrome.runtime.onMessage.addListener((msg: { action: string }) => {
+            if (msg.action !== "tabGroups-changed") {
+                return;
+            }
+            loadAllTabGroup().then(r => {
+                setTabs(r);
+            });
+        });
+    }, []);
+
     function deleteTabGroup(tabGroup: BrowserTabGroup) {
         chrome.storage.local.get("tabGroupIds", (s: { tabGroupIds: string[] }) => {
             chrome.storage.local.set({tabGroupIds: s.tabGroupIds.filter(x => x !== tabGroup.id)})
@@ -38,7 +49,7 @@ export default function TabsApp() {
 
     function deleteTab(tabGroup: BrowserTabGroup, tab: { url?: any; title?: any; id?: number }) {
         tabGroup.tabs = tabGroup.tabs.filter((x: { id: number; }) => x.id === tab.id);
-        updateTabGroup(tabGroup).then(() => setTabs(tabs));
+        updateTabGroup(tabGroup);
     }
 
     function upTabGroup(tabGroup: BrowserTabGroup) {

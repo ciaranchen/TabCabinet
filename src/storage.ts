@@ -16,25 +16,26 @@ export interface BrowserTabGroupExtend {
     id: string
 }
 
-export class BrowserTabGroup {
+export interface BrowserTabGroup {
     date: string;
     tabs: BrowserTab[];
     isLock: boolean;
     groupTitle: string;
     id: string;
+}
 
-    // makes a tab group, filters it
-    // from the array of Tab objects it makes an object with date and the array
-    fromTabArr(tabsArr: chrome.tabs.Tab[]) {
-        this.id = `tabGroup-${genObjectId()}`;
-        this.date = moment().format("YYYY-MM-DD HH:mm:ss").toString();
-        this.tabs = tabsArr.map((tab) => ({
-            title: tab.title.replace(/\p{Cc}/, ''),
-            url: tab.url,
-            id: tab.id
-        }));
-        this.isLock = false;
-        this.groupTitle = '';
+// makes a tab group, filters it
+// from the array of Tab objects it makes an object with date and the array
+
+
+
+export function tabGroupFromTabArr(tabsArr: BrowserTab[]): BrowserTabGroup {
+    return {
+        id: `tabGroup-${genObjectId()}`,
+        date: moment().format("YYYY-MM-DD HH:mm:ss").toString(),
+        tabs: tabsArr,
+        isLock: false,
+        groupTitle: ''
     }
 }
 
@@ -63,8 +64,9 @@ export function saveTabGroup(tab: BrowserTabGroup) {
         });
 
         // 在指定Id处存入
-        updateTabGroup(tab);
-        resolve();
+        updateTabGroup(tab).then(() => {
+            chrome.runtime.sendMessage({action: 'tabGroups-changed'}).then(() => resolve());
+        });
     });
 }
 
@@ -76,16 +78,18 @@ export function restoreStorage() {
         chrome.storage.local.get(null, function (storage: { [p: string]: any }) {
             const ids = Object.keys(storage).filter(x => x.startsWith("tabGroup-"));
             console.debug(ids);
-            chrome.storage.local.set({tabGroupIds: ids});
+            chrome.storage.local.set({tabGroupIds: ids})
+                .then(() => chrome.runtime.sendMessage({action: 'tabGroups-changed'})).then(() => resolve());
         });
     });
 }
 
-export function updateTabGroup(tab: BrowserTabGroup) {
+export function updateTabGroup(tab: BrowserTabGroup, source?: string) {
     return new Promise<void>(resolve => {
-        chrome.storage.local.set({[tab.id]: tab});
-        resolve();
-    })
+        chrome.storage.local.set({[tab.id]: tab})
+            .then(() => chrome.runtime.sendMessage({action: 'tabGroups-changed', source: source?source:''}))
+            .then(() => resolve());
+    });
 }
 
 export interface Settings {
@@ -93,18 +97,28 @@ export interface Settings {
     openOptionsAfterSendTab: boolean
 
     githubToken: string,
+    githubId: string,
     giteeToken: string,
+    giteeId: string,
+
+    autoSync: boolean,
+    autoSyncInterval: number
 }
 
 export const defaultSettings: Settings = {
     deleteAfterOpenTabGroup: false,
     openOptionsAfterSendTab: true,
     githubToken: "",
-    giteeToken: ""
+    githubId: "",
+    giteeToken: "",
+    giteeId: "",
+
+    autoSync: false,
+    autoSyncInterval: 60
 }
 
 export function saveSettings(settings: Settings) {
-    return chrome.storage.sync.set({TabMonsterSettings: settings});
+    return chrome.storage.sync.set({TabMonsterSettings: settings}).then(() => chrome.runtime.sendMessage({action: 'settings-changed'}));
 }
 
 export function loadSettings() {

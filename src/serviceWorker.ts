@@ -75,6 +75,12 @@ chrome.runtime.onMessage.addListener((req, _, sendRes) => {
                 deleteTabGroup(req.tabGroup);
             }
             break;
+        case "tabGroup-app-closed":
+            if (settings.inTimeSync) {
+                autoSync(githubApi);
+                autoSync(giteeApi);
+            }
+            break;
     }
 });
 
@@ -148,7 +154,12 @@ chrome.tabs.onCreated.addListener(updateBadge);
 // 菜单有关动作
 function saveTabs(tabsArr: chrome.tabs.Tab[]) {
     const session = {...makeEmptyTabGroup(), tabs: tabsArr};
-    saveTabGroup(session);
+    saveTabGroup(session).then(() => {
+        if (settings.inTimeSync) {
+            autoSync(githubApi);
+            autoSync(giteeApi);
+        }
+    });
 }
 
 // close all the tabs in the provided array of Tab objects

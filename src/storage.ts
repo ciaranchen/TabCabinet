@@ -126,6 +126,7 @@ export interface Settings {
     giteeToken: string,
     giteeId: string,
 
+    inTimeSync: false,
     autoSync: boolean,
     autoSyncInterval: number
 }
@@ -138,6 +139,7 @@ export const defaultSettings: Settings = {
     giteeToken: "",
     giteeId: "",
 
+    inTimeSync: false,
     autoSync: false,
     autoSyncInterval: 60
 }

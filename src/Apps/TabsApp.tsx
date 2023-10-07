@@ -13,13 +13,25 @@ export default function TabsApp() {
     }, []);
 
     useEffect(() => {
-        chrome.runtime.onMessage.addListener((msg: { action: string }) => {
+        function tabGroupsChangedCallback(msg: { action: string }) {
             if (msg.action === "tabGroups-changed") {
                 loadAllTabGroup().then(r => {
                     setTabGroups(r);
                 });
             }
-        });
+        }
+
+        chrome.runtime.onMessage.addListener(tabGroupsChangedCallback);
+        return () => chrome.runtime.onMessage.removeListener(tabGroupsChangedCallback);
+    }, []);
+
+    useEffect(() => {
+        function inTimeSyncCallback() {
+            chrome.runtime.sendMessage({action: "tabGroup-app-closed"});
+        }
+
+        window.addEventListener('beforeunload', inTimeSyncCallback);
+        return () => window.removeEventListener('beforeunload', inTimeSyncCallback);
     }, []);
 
     function deleteTabGroupAction(tabGroup: TabGroup) {

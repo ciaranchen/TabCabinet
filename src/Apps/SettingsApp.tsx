@@ -81,6 +81,15 @@ export default function SettingsApp() {
             </div>
 
             <div className="form-check form-switch mb-3">
+                <input className="form-check-input" type="checkbox" role="switch" id="inTimeSync"
+                       name="inTimeSync"
+                       onChange={handleInputChange} checked={settings.inTimeSync}/>
+                <label className="form-check-label" htmlFor="inTimeSync">
+                    <span className="i18n" title="inTimeSync"></span>
+                </label>
+            </div>
+
+            <div className="form-check form-switch mb-3">
                 <input className="form-check-input" type="checkbox" role="switch" id="autoSync"
                        name="autoSync"
                        onChange={handleInputChange} checked={settings.autoSync}/>
@@ -90,7 +99,7 @@ export default function SettingsApp() {
             </div>
 
             <div className="mb-3 row" hidden={!settings.autoSync}>
-                <label htmlFor="giteeId" className="col-sm-2 col-form-label">
+                <label htmlFor="autoSyncInterval" className="col-sm-2 col-form-label">
                     <span className="i18n" title="autoSyncInterval"></span></label>
                 <div className="col-sm-5">
                     <input type="number" min="1" className="form-control" id="autoSyncInterval"

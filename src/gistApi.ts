@@ -79,7 +79,7 @@ export class GistApi {
                         throw new Error(response.statusText);
                     }
                 })
-                .then(data => {
+                .then(() => {
                     console.info(`${chrome.i18n.getMessage("updateSuccess")}`);
                     resolve();
                 })

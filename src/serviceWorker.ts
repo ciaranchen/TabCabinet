@@ -11,16 +11,51 @@ import {
 
 
 let settings: Settings, githubApi: GithubApi, giteeApi: GiteeApi;
+let old_autoSync: boolean, old_autoSyncInterval: number;
 
 
 function updateWithSettingsValue(s: Settings) {
     settings = s;
     githubApi = new GithubApi(settings.githubToken, settings.githubId);
     giteeApi = new GiteeApi(settings.giteeToken, settings.giteeId);
+    // 若 autoSync 且新设置与旧设置不同，则需清除alarm，重新设置定时同步。
+    if (s.autoSync && (old_autoSync !== s.autoSync || old_autoSyncInterval !== s.autoSyncInterval)) {
+        chrome.alarms.clear("checkAutoSyncGithub", () => {
+            if (githubApi.gistToken && githubApi.gistToken.length !== 0) {
+                autoSync(githubApi);
+                chrome.alarms.create("checkAutoSyncGithub", {periodInMinutes: settings.autoSyncInterval});
+            }
+        });
+        chrome.alarms.clear("checkAutoSyncGitee", () => {
+            if (giteeApi.gistToken && giteeApi.gistToken.length !== 0) {
+                autoSync(giteeApi);
+                chrome.alarms.create("checkAutoSyncGitee", {periodInMinutes: settings.autoSyncInterval});
+            }
+        });
+
+        old_autoSync = s.autoSync;
+        old_autoSyncInterval = s.autoSyncInterval;
+    }
 }
+
+
+// 持续监听响应定时任务
+chrome.alarms.onAlarm.addListener(function (alarm) {
+    switch (alarm.name) {
+        case "checkAutoSyncGitee":
+            console.log("自动同步gitee")
+            autoSync(giteeApi);
+            break;
+        case "checkAutoSyncGithub":
+            console.log("自动同步github")
+            autoSync(githubApi);
+            break;
+    }
+});
 
 // 加载Settings，初始化Api
 loadSettings().then(updateWithSettingsValue);
+
 
 chrome.runtime.onMessage.addListener((req, _, sendRes) => {
     switch (req.action) {
@@ -39,7 +74,7 @@ chrome.runtime.onMessage.addListener((req, _, sendRes) => {
 });
 
 function pushGist(api: GistApi) {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         if (!giteeApi || !giteeApi.gistToken) {
             reject("No token");
             return;
@@ -47,7 +82,7 @@ function pushGist(api: GistApi) {
         loadAllTabGroup().then(
             tabGroups => {
                 loadSettings().then(settings => {
-                    api.pushData(tabGroups, settings);
+                    api.pushData(tabGroups, settings).then(() => resolve());
                 });
             }
         );
@@ -55,7 +90,7 @@ function pushGist(api: GistApi) {
 }
 
 function pullGist(api: GistApi) {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         // TODO: 提供更明显的提示。
         if (!giteeApi || !giteeApi.gistToken) {
             reject("No token");
@@ -69,10 +104,15 @@ function pullGist(api: GistApi) {
             }
             // TODO: 清除Storage中的原有数据。
             chrome.storage.local.set({tabGroupIds: r.tabGroups.map(x => x.id)}).then(() => {
-                chrome.runtime.sendMessage({action: "tabGroup-changed"}).then(resolve);
+                chrome.runtime.sendMessage({action: "tabGroup-changed"}).then(() => resolve());
             });
         });
     });
+}
+
+function autoSync(api: GistApi) {
+    // TODO: 冲突处理。
+    return pushGist(api);
 }
 
 function openOptionsAndPin() {
@@ -112,26 +152,7 @@ chrome.tabs.onCreated.addListener(function callback() {
 });
 
 
-// 创建定时同步gitee任务
-chrome.alarms.create("checkAutoSyncGitee", {delayInMinutes: 70, periodInMinutes: 70});
-// 创建定时同步github任务
-chrome.alarms.create("checkAutoSyncGithub", {delayInMinutes: 90, periodInMinutes: 90});
-// 持续监听响应定时任务
-chrome.alarms.onAlarm.addListener(function (alarm) {
-    if (alarm.name === "checkAutoSyncGitee") {
-        if (giteeApi) {
-            console.log("自动同步gitee")
-            giteeApi.checkAutoSync();
-        }
-    }
-    if (alarm.name === "checkAutoSyncGithub") {
-        if (githubApi) {
-            console.log("自动同步github")
-            githubApi.checkAutoSync();
-        }
-    }
-});
-
+// 菜单有关动作
 function saveTabs(tabsArr: chrome.tabs.Tab[]) {
     const session = {...makeEmptyTabGroup(), tabs: tabsArr};
     saveTabGroup(session);

@@ -457,5 +457,11 @@
 	},
 	"openOptionsAfterSendTab": {
 		"message": "在发送标签后打开 TabCabinet"
+	},
+	"githubIdPlaceholder": {
+		"message": "填写Github Token后出现"
+	},
+	"giteeIdPlaceholder": {
+		"message": "填写Gitee Token后出现"
 	}
 }

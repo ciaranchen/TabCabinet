@@ -150,10 +150,6 @@ export class GistApi {
             }
         });
     }
-
-    checkAutoSync() {
-        console.log("unfinished.");
-    }
 }
 
 

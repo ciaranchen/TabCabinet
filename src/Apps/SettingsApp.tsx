@@ -3,7 +3,6 @@ import {useEffect, useState} from "react";
 import {defaultSettings, loadSettings, saveSettings, Settings} from "../storage";
 
 
-
 export default function SettingsApp() {
     const [settings, setSettings] = useState<Settings>(defaultSettings);
 
@@ -55,6 +54,15 @@ export default function SettingsApp() {
             </div>
 
             <div className="mb-3 row">
+                <label htmlFor="githubId" className="col-sm-2 col-form-label">
+                    <span className="i18n" title="githubId"></span></label>
+                <div className="col-sm-5">
+                    <input className="form-control" id="githubId" value={settings.githubId}
+                           placeholder={chrome.i18n.getMessage("githubIdPlaceholder")} disabled={true}/>
+                </div>
+            </div>
+
+            <div className="mb-3 row">
                 <label htmlFor="giteeToken" className="col-sm-2 col-form-label">
                     <span className="i18n" title="giteeToken"></span></label>
                 <div className="col-sm-5">
@@ -63,13 +71,32 @@ export default function SettingsApp() {
                 </div>
             </div>
 
+            <div className="mb-3 row">
+                <label htmlFor="giteeId" className="col-sm-2 col-form-label">
+                    <span className="i18n" title="giteeId"></span></label>
+                <div className="col-sm-5">
+                    <input className="form-control" id="giteeId" value={settings.giteeId}
+                           placeholder={chrome.i18n.getMessage("giteeIdPlaceholder")} disabled={true}/>
+                </div>
+            </div>
+
+
+            <div className="form-check form-switch mb-3">
+                <input className="form-check-input" type="checkbox" role="switch" id="autoSync"
+                       name="autoSync"
+                       onChange={handleInputChange} checked={settings.autoSync}/>
+                <label className="form-check-label" htmlFor="autoSync">
+                    <span className="i18n" title="autoSync"></span>
+                </label>
+            </div>
+
             <button type="submit" className="btn btn-primary">
                 <span className="i18n" title="saveButtonValue"></span>
             </button>
         </form>
 
 
-        <div id="saved"><span className="i18n" title="savedValue"></span></div>
+        {/*<div id="saved"><span className="i18n" title="savedValue"></span></div>*/}
 
     </div>)
 }

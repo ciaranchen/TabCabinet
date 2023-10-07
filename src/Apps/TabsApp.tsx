@@ -56,6 +56,10 @@ export default function TabsApp() {
         //     未实现
     }
 
+    function shareTabGroup(x: TabGroup) {
+        //     未实现
+    }
+
     return (
         <div>
             {tabs.map(x =>
@@ -66,6 +70,7 @@ export default function TabsApp() {
                             {/*<span className="tabgroup-date">{Date. x.created_at}</span>*/}
                             <a className="btn btn-link" onClick={() => openInThisWindow(x)}>打开标签组</a>
                             <a className="btn btn-link" onClick={() => deleteTabGroup(x)}>删除标签组</a>
+                            {/*<a className="btn btn-link" onClick={() => shareTabGroup(x)}>分享标签组</a>*/}
                             {/*<a className="btn btn-link" onClick={() => lockTabGroup(x)}>锁定标签组</a>*/}
                             {/*<a className="btm btn-link" onClick={upTabGroup}>上移标签组</a>*/}
                             {/*<a className="btn btn-link" onClick={() => renameTabGroup(x)}>重命名标签组</a>*/}

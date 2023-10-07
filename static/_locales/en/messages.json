@@ -457,5 +457,11 @@
 	},
 	"openOptionsAfterSendTab": {
 		"message": "Open Tab Cabinet After Send Tab"
+	},
+	"githubIdPlaceholder": {
+		"message": "Appears after filling in the Github Token"
+	},
+	"giteeIdPlaceholder": {
+		"message": "Appears after filling in the Gitee Token"
 	}
 }

@@ -2,38 +2,8 @@ import {
     TabGroup,
     loadAllTabGroup,
     makeEmptyTabGroup,
-    OneTabData,
     importTabGroups
 } from "./storage";
-
-
-
-export function importOneTab() {
-    const importValue = (<HTMLTextAreaElement>document.getElementById("importOnetabTextarea")).value;
-    console.log(importValue);
-    const content = importValue.split('\n');
-    const tabGroups: TabGroup[] = [];
-    let tabArr: OneTabData[] = [];
-
-    for (const line of content) {
-        if (line.trim() === "") {
-            // fromTabArr 构造一个空的tabGroup
-            const tabGroup = makeEmptyTabGroup()
-            tabGroups.push(tabGroup);
-        } else {
-            const lineList = line.split('|');
-            const tab: OneTabData = {
-                title: lineList[1].trim(),
-                url: lineList[0].trim(),
-                id: tabArr.length
-            };
-            tabArr.push(tab);
-        }
-    }
-
-    importTabGroups(tabGroups);
-    location.reload();
-}
 
 // TODO: 将默认形式改为json格式
 export function importDefaultCsv() {
@@ -65,8 +35,7 @@ export function importDefaultCsv() {
         }
     }
 
-    importTabGroups(tabGroups);
-    location.reload();
+    importTabGroups(tabGroups).then(location.reload);
 }
 
 export function exportDefaultCsv() {

@@ -25,7 +25,7 @@ export default function SettingsApp() {
         saveSettings(settings);
     }
 
-    return (<div className="option container">
+    return (<div className="container">
         <h2><span className="i18n" title="Settings"></span></h2>
         <form onSubmit={handleSubmit}>
             <div className="form-check form-switch mb-3">

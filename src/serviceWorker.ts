@@ -13,15 +13,10 @@ import {
 let settings: Settings, githubApi: GithubApi, giteeApi: GiteeApi;
 
 
-
 function updateWithSettingsValue(s: Settings) {
     settings = s;
     githubApi = new GithubApi(settings.githubToken, settings.githubId);
     giteeApi = new GiteeApi(settings.giteeToken, settings.giteeId);
-    // 检查跟github的通讯是否正常
-    // githubApi.checkCommunicationStatus(checkStatusCallback);
-    // 检查跟gitee的通讯是否正常
-    // giteeApi.checkCommunicationStatus(checkStatusCallback);
 }
 
 // 加载Settings，初始化Api
@@ -33,22 +28,13 @@ chrome.runtime.onMessage.addListener((req, _, sendRes) => {
             loadSettings().then(updateWithSettingsValue);
             break;
         case "push-git":
-            if (req.api === githubApi.name) {
-                pushGist(githubApi)
-                    .then(() => sendRes(true))
-                    .catch(() => sendRes(false));
-                break;
-            }
-            if (req.api === giteeApi.name) {
-                pushGist(giteeApi)
-                    .then(() => sendRes(true))
-                    .catch(() => sendRes(false));
-                break;
-            }
+            pushGist(req.api === githubApi.name ? githubApi : giteeApi)
+                .then(() => sendRes(true))
+                .catch(() => sendRes(false));
+            break;
         case "pull-git":
-            if (req.api === githubApi.name) {
-
-            }
+            pullGist(req.api === githubApi.name ? githubApi : giteeApi);
+            break;
     }
 });
 
@@ -69,20 +55,22 @@ function pushGist(api: GistApi) {
 }
 
 function pullGist(api: GistApi) {
-    // TODO: 提供更明显的提示。
-    if (!giteeApi || !giteeApi.gistToken) {
-        console.error("No token");
-        return;
-    }
-
-    api.pullData().then((r: { tabGroups: TabGroup[], settings: Settings }) => {
-        saveSettings(r.settings).then(() => updateWithSettingsValue(r.settings));
-        for (const group of r.tabGroups) {
-            chrome.storage.local.set({[group.id]: group});
+    return new Promise((resolve, reject) => {
+        // TODO: 提供更明显的提示。
+        if (!giteeApi || !giteeApi.gistToken) {
+            reject("No token");
+            return;
         }
-        // TODO: 清除Storage中的原有数据。
-        chrome.storage.local.set({tabGroupIds: r.tabGroups.map(x => x.id)}).then(() => {
-            chrome.runtime.sendMessage({action: "tabGroup-changed"});
+
+        api.pullData().then((r: { tabGroups: TabGroup[], settings: Settings }) => {
+            saveSettings(r.settings).then(() => updateWithSettingsValue(r.settings));
+            for (const group of r.tabGroups) {
+                chrome.storage.local.set({[group.id]: group});
+            }
+            // TODO: 清除Storage中的原有数据。
+            chrome.storage.local.set({tabGroupIds: r.tabGroups.map(x => x.id)}).then(() => {
+                chrome.runtime.sendMessage({action: "tabGroup-changed"}).then(resolve);
+            });
         });
     });
 }

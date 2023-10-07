@@ -12,7 +12,7 @@ export interface TabGroup {
     id: string
     created_at: number
     updated_at?: number
-    title?: string
+    title: string
     tabs?: BrowserTab[]
 
     collapsed: boolean
@@ -24,6 +24,7 @@ export interface TabGroup {
 export function makeEmptyTabGroup(): TabGroup {
     return {
         id: `tabGroup-${genObjectId()}`,
+        title: '',
         created_at: new Date().getTime(),
         collapsed: false,
         lock: false,
@@ -77,6 +78,7 @@ export function importTabGroups(tabGroups: TabGroup[]) {
             if (storage.tabGroupIds) {
                 tabGroupIds = storage.tabGroupIds;
             }
+            // TODO: handle id 重复的情况
             chrome.storage.local.set({tabGroupIds: tabGroupIds.concat(tabGroups.map(x => x.id))}).then(() => {
                 chrome.runtime.sendMessage({action: 'tabGroups-changed'}).then(() => resolve());
             });

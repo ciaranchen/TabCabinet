@@ -75,7 +75,7 @@ export default function TabsApp() {
                     <ul className="list-group">
                         {x.tabs.map((tab: BrowserTab) =>
                             <a className="list-group-item d-flex justify-content-between align-items-center"
-                               key={tab.url} href={tab.url} target="_blank">
+                               key={tab.id} href={tab.url} target="_blank">
                                 {tab.title ? tab.title : " "}
                                 <button type="button" className="btn-close " aria-label="Close"
                                         onClick={(e) => {

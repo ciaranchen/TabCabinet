@@ -8,11 +8,6 @@ export class GistApi {
     protected apiUrl: string;
     protected gistApiUrl: string;
 
-    protected i18nGetMessage?(name: string): string;
-
-    protected checkCommunicationStatus?(callback: (request: Promise<Response>, api_name: string, status_elem_id: string, success: string, failed: string) => Promise<void>): void;
-
-
     constructor(gistToken: string, gistId: string) {
         this.gistToken = gistToken;
         this.gistId = gistId;
@@ -115,7 +110,7 @@ export class GistApi {
     }
 
     pullData() {
-        return new Promise<{tabGroups: TabGroup[], settings: Settings}>((resolve, reject) => {
+        return new Promise<{ tabGroups: TabGroup[], settings: Settings }>((resolve, reject) => {
             if (this.gistToken && this.gistToken !== "" && this.gistId && this.gistId !== "") {
                 // 发送Fetch请求
                 fetch(`${this.apiUrl}${this.gistApiUrl}${this.gistId}`, {
@@ -157,40 +152,10 @@ export class GiteeApi extends GistApi {
     name = 'gitee';
     apiUrl = "https://gitee.com/api/v5";
     gistApiUrl = "/gists/";
-
-    protected i18nGetMessage(name: string): string {
-        const msg_map = new Map([
-            ["startCheckGistIdSaved", "startCheckGiteeTokenSaved"],
-            ["gistIdSaved", "giteeTokenSaved"],
-            ["gistIdNoSaved", "giteeTokenNoSaved"],
-            ["autoPushToGist", "autoPushToGiteeGist"],
-            // ["endPushToGist", "endPushToGiteeGist"],
-            ["autoPush", "autoPushGitee"],
-            ["pushToGistIng", "pushToGiteeGistIng"],
-            ["startPushToGistTask", "startPushToGiteeGistTask"],
-            ["endPushToGistTask", "endPushToGiteeGistTask"],
-        ]);
-        return chrome.i18n.getMessage(msg_map.get(name) ? msg_map.get(name) : name);
-    }
 }
 
 export class GithubApi extends GistApi {
     name = 'github';
     apiUrl = "https://api.github.com";
     protected gistApiUrl = "/gists/";
-
-    protected i18nGetMessage(name: string): string {
-        const msg_map = new Map([
-            ["startCheckGistIdSaved", "startCheckGithubTokenSaved"],
-            ["gistIdSaved", "githubTokenSaved"],
-            ["gistIdNoSaved", "githubTokenNoSaved"],
-            ["autoPushToGist", "autoPushToGithubGist"],
-            // ["endPushToGist", "endPushToGithubGist"],
-            ["autoPush", "autoPushGithub"],
-            ["pushToGistIng", "pushToGithubGistIng"],
-            ["startPushToGistTask", "startPushToGithubGistTask"],
-            ["endPushToGistTask", "endPushToGithubGistTask"],
-        ]);
-        return chrome.i18n.getMessage(msg_map.get(name) ? msg_map.get(name) : name);
-    }
 }

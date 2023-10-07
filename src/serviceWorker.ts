@@ -62,18 +62,19 @@ chrome.runtime.onMessage.addListener((req, _, sendRes) => {
         case "settings-changed":
             loadSettings().then(updateWithSettingsValue);
             break;
-        case "push-git":
+        case "push-gist":
             pushGist(req.api === githubApi.name ? githubApi : giteeApi)
                 .then(() => sendRes(true))
                 .catch(() => sendRes(false));
             break;
-        case "pull-git":
+        case "pull-gist":
             pullGist(req.api === githubApi.name ? githubApi : giteeApi);
             break;
         case "tabGroup-open":
             if (settings.deleteAfterOpenTabGroup) {
                 deleteTabGroup(req.tabGroup);
             }
+            break;
     }
 });
 
@@ -96,12 +97,13 @@ function pushGist(api: GistApi) {
 function pullGist(api: GistApi) {
     return new Promise<void>((resolve, reject) => {
         // TODO: 提供更明显的提示。
-        if (!giteeApi || !giteeApi.gistToken) {
-            reject("No token");
+        if (!api) {
+            reject("Not initial");
             return;
         }
 
         api.pullData().then((r: { tabGroups: TabGroup[], settings: Settings }) => {
+            console.log(r.tabGroups, r.settings);
             saveSettings(r.settings).then(() => updateWithSettingsValue(r.settings));
             for (const group of r.tabGroups) {
                 chrome.storage.local.set({[group.id]: group});
@@ -110,7 +112,7 @@ function pullGist(api: GistApi) {
             chrome.storage.local.set({tabGroupIds: r.tabGroups.map(x => x.id)}).then(() => {
                 chrome.runtime.sendMessage({action: "tabGroup-changed"}).then(() => resolve());
             });
-        });
+        }).catch(reason => reject(reason));
     });
 }
 

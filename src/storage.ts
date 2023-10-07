@@ -61,7 +61,6 @@ export function saveTabGroup(tabGroup: TabGroup) {
                 chrome.runtime.sendMessage({action: 'tabGroups-changed'}).then(() => resolve());
             });
         });
-
     });
 }
 
@@ -100,11 +99,21 @@ export function restoreStorage() {
     });
 }
 
-export function updateTabGroup(tab: TabGroup, source?: string) {
+export function updateTabGroup(tab: TabGroup, sendMsg = true) {
     return new Promise<void>(resolve => {
         chrome.storage.local.set({[tab.id]: tab})
-            .then(() => chrome.runtime.sendMessage({action: 'tabGroups-changed', source: source ? source : ''}))
+            .then(() => sendMsg ? chrome.runtime.sendMessage({action: 'tabGroups-changed'}) : false)
             .then(() => resolve());
+    });
+}
+
+export function deleteTabGroup(tabGroup: TabGroup) {
+    return new Promise<void>(resolve => {
+        chrome.storage.local.get("tabGroupIds", (s: { tabGroupIds: string[] }) => {
+            chrome.storage.local.set({tabGroupIds: s.tabGroupIds.filter(x => x !== tabGroup.id)})
+                .then(() => chrome.storage.local.remove(tabGroup.id))
+                .then(() => resolve());
+        });
     });
 }
 

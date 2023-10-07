@@ -6,7 +6,7 @@ import {
     loadAllTabGroup,
     TabGroup,
     saveSettings,
-    makeEmptyTabGroup
+    makeEmptyTabGroup, deleteTabGroup
 } from "./storage";
 
 
@@ -70,6 +70,10 @@ chrome.runtime.onMessage.addListener((req, _, sendRes) => {
         case "pull-git":
             pullGist(req.api === githubApi.name ? githubApi : giteeApi);
             break;
+        case "tabGroup-open":
+            if (settings.deleteAfterOpenTabGroup) {
+                deleteTabGroup(req.tabGroup);
+            }
     }
 });
 
@@ -120,6 +124,7 @@ function openOptionsAndPin() {
 }
 
 chrome.action.onClicked.addListener(() => {
+    // TODO: 可设定的点击行为
     chrome.runtime.openOptionsPage();
 })
 

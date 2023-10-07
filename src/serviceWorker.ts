@@ -123,34 +123,20 @@ chrome.action.onClicked.addListener(() => {
     chrome.runtime.openOptionsPage();
 })
 
+
 // 获取tab数量并在pop上显示
-chrome.tabs.query({}, function (tab) {
-    chrome.action.setBadgeText({text: tab.length + ""});
-    chrome.action.setBadgeBackgroundColor({color: "#0038a8"});
-});
+function updateBadge() {
+    chrome.tabs.query({}, function (tabs) {
+        chrome.action.setBadgeText({text: tabs.length + ""});
+        chrome.action.setBadgeBackgroundColor({color: "#0038a8"});
+    });
+}
 
-// 持续监听，当tab被激活的时候刷新一下pop上badge的tab的数量
-chrome.tabs.onActivated.addListener(function callback() {
-    chrome.tabs.query({}, function (tab) {
-        chrome.action.setBadgeText({text: tab.length + ""});
-        chrome.action.setBadgeBackgroundColor({color: "#0038a8"});
-    });
-});
-// 持续监听，当tab被关闭的时候刷新一下pop上badge的tab的数量
-chrome.tabs.onRemoved.addListener(function callback() {
-    chrome.tabs.query({}, function (tab) {
-        chrome.action.setBadgeText({text: tab.length + ""});
-        chrome.action.setBadgeBackgroundColor({color: "#0038a8"});
-    });
-});
-// 持续监听，当tab被创建的时候刷新一下pop上badge的tab的数量
-chrome.tabs.onCreated.addListener(function callback() {
-    chrome.tabs.query({}, function (tab) {
-        chrome.action.setBadgeText({text: tab.length + ""});
-        chrome.action.setBadgeBackgroundColor({color: "#0038a8"});
-    });
-});
-
+// 持续监听，当tab被激活、关闭、创建的时候刷新一下pop上badge的tab的数量
+updateBadge();
+chrome.tabs.onActivated.addListener(updateBadge);
+chrome.tabs.onRemoved.addListener(updateBadge);
+chrome.tabs.onCreated.addListener(updateBadge);
 
 // 菜单有关动作
 function saveTabs(tabsArr: chrome.tabs.Tab[]) {
@@ -196,76 +182,46 @@ chrome.contextMenus.create({
 
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
     console.log(info, tab);
-    if (info.menuItemId === "tabCabinet-SendCurrentTab") {
-        chrome.storage.local.get(function (storage) {
-            chrome.tabs.query({
-                url: ["https://*/*", "http://*/*"], highlighted: true, currentWindow: true
-            }, function (tabsArr) {
-                const opts = storage.options
-                let openBackgroundAfterSendTab = "yes"
-                if (opts) {
-                    openBackgroundAfterSendTab = opts.openBackgroundAfterSendTab || "yes"
-                }
-                if (tabsArr.length > 0) {
-                    saveTabs(tabsArr);
-                    if (openBackgroundAfterSendTab === "yes") {
-                        chrome.runtime.openOptionsPage();
-                    }
-                    closeTabs(tabsArr);
-                } else {
-                    if (openBackgroundAfterSendTab === "yes") {
-                        chrome.runtime.openOptionsPage();
-                    }
-                }
-
-            });
-        });
-    } else if (info.menuItemId === '4') {
+    if (info.menuItemId === '4') {
         chrome.runtime.openOptionsPage();
-    } else if (info.menuItemId === '5') {
-        chrome.tabs.query({url: ["https://*/*", "http://*/*"], currentWindow: true}, function (tabs) {
+    } else if (info.menuItemId === '5') { // sendAllTabs
+        chrome.tabs.query({
+            url: ["https://*/*", "http://*/*"],
+            currentWindow: true
+        }, function (tabs) {
             if (tabs.length > 0) {
                 saveTabs(tabs);
-                chrome.runtime.openOptionsPage();
-                closeTabs(tabs);
-            } else {
-                chrome.runtime.openOptionsPage();
             }
+            chrome.runtime.openOptionsPage();
+            closeTabs(tabs);
         });
-    } else if (info.menuItemId === '6') {
-
-        chrome.storage.local.get(function (storage) {
-            const opts = storage.options
-            let openBackgroundAfterSendTab = "yes"
-            if (opts) {
-                openBackgroundAfterSendTab = opts.openBackgroundAfterSendTab || "yes"
+    } else if (info.menuItemId === '6' || info.menuItemId === "tabCabinet-SendCurrentTab") { // sendCurrentTab
+        chrome.tabs.query({
+            url: ["https://*/*", "http://*/*"],
+            highlighted: true,
+            currentWindow: true
+        }, function (tabs) {
+            if (tabs.length > 0) {
+                saveTabs(tabs);
             }
-            chrome.tabs.query({
-                url: ["https://*/*", "http://*/*"], highlighted: true, currentWindow: true
-            }, function (req) {
-                if (req.length > 0) {
-                    saveTabs(req);
-                    if (openBackgroundAfterSendTab === "yes") {
-                        chrome.runtime.openOptionsPage();
-                    }
-                    closeTabs(req);
-                } else {
-                    if (openBackgroundAfterSendTab === "yes") {
-                        chrome.runtime.openOptionsPage();
-                    }
-                }
-            });
+            if (settings.openOptionsAfterSendTab) {
+                chrome.runtime.openOptionsPage();
+            }
+            closeTabs(tabs);
         });
-    } else if (info.menuItemId === '7') {
-        chrome.tabs.query({url: ["https://*/*", "http://*/*"], active: false, currentWindow: true}, function (req) {
-            if (req.length > 0) {
-                saveTabs(req);
-                chrome.runtime.openOptionsPage();
-                closeTabs(req);
-            } else {
-                chrome.runtime.openOptionsPage();
+    } else if (info.menuItemId === '7') {  // sendOtherTabs
+        chrome.tabs.query({
+            url: ["https://*/*", "http://*/*"],
+            active: false,
+            currentWindow: true
+        }, function (tabs) {
+            if (tabs.length > 0) {
+                saveTabs(tabs);
             }
+            chrome.runtime.openOptionsPage();
+            closeTabs(tabs);
         });
     }
-});
+})
+;
 

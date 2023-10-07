@@ -456,7 +456,7 @@
 		"message": "日志"
 	},
 	"openOptionsAfterSendTab": {
-		"message": "在发送标签后打开 TabCabinet"
+		"message": "在发送单个标签后打开 TabCabinet"
 	},
 	"githubIdPlaceholder": {
 		"message": "填写Github Token后出现"

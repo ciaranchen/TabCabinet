@@ -456,7 +456,7 @@
 		"message": "Log"
 	},
 	"openOptionsAfterSendTab": {
-		"message": "Open Tab Cabinet After Send Tab"
+		"message": "Open Tab Cabinet After Send Single Tab"
 	},
 	"githubIdPlaceholder": {
 		"message": "Appears after filling in the Github Token"

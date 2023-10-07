@@ -1,71 +1,85 @@
 import {genObjectId} from "./utils";
-import * as moment from "moment";
 
-export interface BrowserTab {
+export interface OneTabData {
     title: string
     url: string
     id: number
 }
 
-// TODO: use below to fix more.
-export interface BrowserTabGroupExtend {
-    created: string
-    tabs: chrome.tabs.Tab[]
-    isLock: boolean
-    groupTitle: string
+export type BrowserTab = chrome.tabs.Tab | OneTabData;
+
+export interface TabGroup {
     id: string
+    created_at: number
+    updated_at?: number
+    title?: string
+    tabs?: BrowserTab[]
+
+    collapsed: boolean
+    lock: boolean
 }
 
-export interface BrowserTabGroup {
-    date: string;
-    tabs: BrowserTab[];
-    isLock: boolean;
-    groupTitle: string;
-    id: string;
-}
 
-// makes a tab group, filters it
-// from the array of Tab objects it makes an object with date and the array
-
-
-
-export function tabGroupFromTabArr(tabsArr: BrowserTab[]): BrowserTabGroup {
+// makes a tab group
+export function makeEmptyTabGroup(): TabGroup {
     return {
         id: `tabGroup-${genObjectId()}`,
-        date: moment().format("YYYY-MM-DD HH:mm:ss").toString(),
-        tabs: tabsArr,
-        isLock: false,
-        groupTitle: ''
+        created_at: new Date().getTime(),
+        collapsed: false,
+        lock: false,
+
+        tabs: []
     }
 }
 
-export function loadAllTabGroup(): Promise<BrowserTabGroup[]> {
+export function loadAllTabGroup(): Promise<TabGroup[]> {
     return new Promise((resolve) => {
         chrome.storage.local.get("tabGroupIds", function (storage: { tabGroupIds: string[] }) {
             if (!storage.tabGroupIds) resolve([]);
-            chrome.storage.local.get(storage.tabGroupIds, (groups: { [p: string]: BrowserTabGroup }) => {
+            chrome.storage.local.get(storage.tabGroupIds, (groups: { [p: string]: TabGroup }) => {
                 resolve(Object.values(groups));
             });
         });
     });
 }
 
-export function saveTabGroup(tab: BrowserTabGroup) {
+export function saveTabGroup(tabGroup: TabGroup) {
     return new Promise<void>((resolve, reject) => {
+        // 在指定位置存入
+        updateTabGroup(tabGroup);
+
         // 存储Id
         chrome.storage.local.get("tabGroupIds", function (storage: { tabGroupIds: string[] }) {
             let tabGroupIds: string[] = [];
             if (storage.tabGroupIds) {
                 tabGroupIds = storage.tabGroupIds;
             }
-            tabGroupIds.push(tab.id);
+            tabGroupIds.push(tabGroup.id);
             // TODO: handle id 重复的情况
-            chrome.storage.local.set({tabGroupIds: tabGroupIds});
+            chrome.storage.local.set({tabGroupIds: tabGroupIds}).then(() => {
+                chrome.runtime.sendMessage({action: 'tabGroups-changed'}).then(() => resolve());
+            });
         });
 
-        // 在指定Id处存入
-        updateTabGroup(tab).then(() => {
-            chrome.runtime.sendMessage({action: 'tabGroups-changed'}).then(() => resolve());
+    });
+}
+
+export function importTabGroups(tabGroups: TabGroup[]) {
+    return new Promise<void>((resolve, reject) => {
+        // 在指定位置存入
+        for (const tabGroup of tabGroups) {
+            updateTabGroup(tabGroup);
+        }
+
+        // 存储Id
+        chrome.storage.local.get("tabGroupIds", function (storage: { tabGroupIds: string[] }) {
+            let tabGroupIds: string[] = [];
+            if (storage.tabGroupIds) {
+                tabGroupIds = storage.tabGroupIds;
+            }
+            chrome.storage.local.set({tabGroupIds: tabGroupIds.concat(tabGroups.map(x => x.id))}).then(() => {
+                chrome.runtime.sendMessage({action: 'tabGroups-changed'}).then(() => resolve());
+            });
         });
     });
 }
@@ -84,10 +98,10 @@ export function restoreStorage() {
     });
 }
 
-export function updateTabGroup(tab: BrowserTabGroup, source?: string) {
+export function updateTabGroup(tab: TabGroup, source?: string) {
     return new Promise<void>(resolve => {
         chrome.storage.local.set({[tab.id]: tab})
-            .then(() => chrome.runtime.sendMessage({action: 'tabGroups-changed', source: source?source:''}))
+            .then(() => chrome.runtime.sendMessage({action: 'tabGroups-changed', source: source ? source : ''}))
             .then(() => resolve());
     });
 }

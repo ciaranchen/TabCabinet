@@ -1,39 +1,28 @@
-import {BrowserTab, BrowserTabGroup, loadAllTabGroup, tabGroupFromTabArr, updateTabGroup} from "./storage";
+import {
+    TabGroup,
+    loadAllTabGroup,
+    makeEmptyTabGroup,
+    OneTabData,
+    importTabGroups
+} from "./storage";
 
-function importTabGroupIntoStorage(tabGroups: BrowserTabGroup[]) {
-    // 存储Id
-    chrome.storage.local.get("tabGroupIds", function (storage: { tabGroupIds: string[] }) {
-        let tabGroupIds: string[] = [];
-        if (storage.tabGroupIds) {
-            tabGroupIds = storage.tabGroupIds;
-        }
 
-        chrome.storage.local.set({tabGroupIds: tabGroupIds.concat(tabGroups.map(x => x.id))});
-    });
-
-    for (const tabGroup of tabGroups) {
-        // 在指定Id处存入
-        updateTabGroup(tabGroup);
-    }
-}
 
 export function importOneTab() {
     const importValue = (<HTMLTextAreaElement>document.getElementById("importOnetabTextarea")).value;
     console.log(importValue);
     const content = importValue.split('\n');
-    const tabGroups: BrowserTabGroup[] = [];
-    let tabArr: BrowserTab[] = [];
+    const tabGroups: TabGroup[] = [];
+    let tabArr: OneTabData[] = [];
 
     for (const line of content) {
         if (line.trim() === "") {
             // fromTabArr 构造一个空的tabGroup
-            const tabGroup = tabGroupFromTabArr(tabArr);
-            tabArr = [];
-
+            const tabGroup = makeEmptyTabGroup()
             tabGroups.push(tabGroup);
         } else {
             const lineList = line.split('|');
-            const tab: { id: number; title: string; url: string } = {
+            const tab: OneTabData = {
                 title: lineList[1].trim(),
                 url: lineList[0].trim(),
                 id: tabArr.length
@@ -42,17 +31,17 @@ export function importOneTab() {
         }
     }
 
-    importTabGroupIntoStorage(tabGroups);
-    // TODO: refresh page
+    importTabGroups(tabGroups);
+    location.reload();
 }
 
 // TODO: 将默认形式改为json格式
-export function importDefault() {
+export function importDefaultCsv() {
     const importValue = (<HTMLTextAreaElement>document.getElementById("importDefaultTextarea")).value;
     console.log(importValue);
     const content = importValue.split('\n');
-    const tabGroups: BrowserTabGroup[] = [];
-    let tabGroup: BrowserTabGroup;
+    const tabGroups: TabGroup[] = [];
+    let tabGroup: TabGroup;
 
     for (const line of content) {
         if (tabGroup) {
@@ -70,20 +59,20 @@ export function importDefault() {
             }
         } else if (line.trim() !== "") {
             const lineList = line.split('|');
-            tabGroup = tabGroupFromTabArr([]);
-            tabGroup.groupTitle = lineList[0].trim()
-            tabGroup.isLock = lineList[1].trim() === "锁定";
+            tabGroup = makeEmptyTabGroup();
+            tabGroup.title = lineList[0].trim()
+            tabGroup.lock = lineList[1].trim() === "锁定";
         }
     }
 
-    importTabGroupIntoStorage(tabGroups);
-    // TODO: refresh page
+    importTabGroups(tabGroups);
+    location.reload();
 }
 
-export function exportDefault() {
+export function exportDefaultCsv() {
     loadAllTabGroup().then(groups =>
         groups.map(group =>
-            `${group.groupTitle}|${group.isLock ? "锁定" : "解锁"}\n` +
+            `${group.title}|${group.lock ? "锁定" : "解锁"}\n` +
             group.tabs.map(tab => `${tab.url}|${tab.title}`).join('\n')
         ).join('\n\n')
     ).then(exportData => {

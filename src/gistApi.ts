@@ -1,4 +1,4 @@
-import {BrowserTabGroup, saveSettings, Settings} from "./storage";
+import {TabGroup, saveSettings, Settings} from "./storage";
 
 export class GistApi {
     gistToken: string;
@@ -9,6 +9,7 @@ export class GistApi {
     protected gistApiUrl: string;
 
     protected i18nGetMessage?(name: string): string;
+
     protected checkCommunicationStatus?(callback: (request: Promise<Response>, api_name: string, status_elem_id: string, success: string, failed: string) => Promise<void>): void;
 
 
@@ -17,7 +18,7 @@ export class GistApi {
         this.gistId = gistId;
     }
 
-    gistDataConstructor(tabGroups: BrowserTabGroup[], settings: Settings) {
+    gistDataConstructor(tabGroups: TabGroup[], settings: Settings) {
         return {
             "description": "TabCabinet Data Storage", "public": false, "files": {
                 "TabGroups.json": {"content": JSON.stringify(tabGroups)},
@@ -27,7 +28,7 @@ export class GistApi {
     }
 
     // 新建Gist
-    createGist(tabGroups: BrowserTabGroup[], settings: Settings): Promise<string> {
+    createGist(tabGroups: TabGroup[], settings: Settings): Promise<string> {
         console.log("还没有创建gist,开始创建");
         console.info(`${chrome.i18n.getMessage("startCreateGithubGist")}`)
         const data = this.gistDataConstructor(tabGroups, settings);
@@ -63,7 +64,7 @@ export class GistApi {
     }
 
     // 更新Gist
-    updateGist(tabGroups: BrowserTabGroup[], settings: Settings) {
+    updateGist(tabGroups: TabGroup[], settings: Settings) {
         console.log(`更新 ${this.name} 的gist`)
         console.info(`${chrome.i18n.getMessage("directUpdate")}`)
         const data = this.gistDataConstructor(tabGroups, settings);
@@ -93,54 +94,60 @@ export class GistApi {
         });
     }
 
-    pushData(tabGroups: BrowserTabGroup[], settings: Settings) {
-        if (this.gistToken && this.gistToken !== "") {
-            if (this.gistId && this.gistId !== "") {
-                this.updateGist(tabGroups, settings);
+    pushData(tabGroups: TabGroup[], settings: Settings) {
+        return new Promise<void>((resolve, reject) => {
+            if (this.gistToken && this.gistToken !== "") {
+                if (this.gistId && this.gistId !== "") {
+                    this.updateGist(tabGroups, settings).then(() => resolve());
+                } else {
+                    this.createGist(tabGroups, settings).then(id => {
+                        this.gistId = id;
+                        saveSettings({...settings, [this.name + "Id"]: id})
+                            // 再更新一次将 Gist Id 上传到同步中
+                            // .then(() => this.updateGist(tabGroups, settings))
+                            .then(() => resolve);
+                    });
+                }
             } else {
-                this.createGist(tabGroups, settings).then(id => {
-                    this.gistId = id;
-                    saveSettings({...settings, [this.name + "Id"]: id});
-                        // 再更新一次将 Gist Id 上传到同步中
-                        // .then(() => this.updateGist(tabGroups, settings));
-                });
+                reject("should set gistToken first");
             }
-        } else {
-            console.error("should set gistToken first");
-        }
+        });
     }
 
     pullData() {
-        return new Promise((resolve, reject) => {
-            // 发送Fetch请求
-            fetch(`${this.apiUrl}${this.gistApiUrl}${this.gistId}`, {
-                method: "GET", headers: {
-                    "Authorization": `token ${this.gistToken}`,
-                }
-            })
-                .then((response) => {
-                    if (response.ok) {
-                        return response.json(); // 解析响应的JSON数据
-                    } else {
-                        throw new Error("根据gistId拉取gist失败了");
+        return new Promise<{tabGroups: TabGroup[], settings: Settings}>((resolve, reject) => {
+            if (this.gistToken && this.gistToken !== "" && this.gistId && this.gistId !== "") {
+                // 发送Fetch请求
+                fetch(`${this.apiUrl}${this.gistApiUrl}${this.gistId}`, {
+                    method: "GET", headers: {
+                        "Authorization": `token ${this.gistToken}`,
                     }
                 })
-                .then((data) => {
-                    const tabGroupsContent = data.files['TabGroups.json'].content;
-                    const settingsContent = data.files['Settings.json'].content;
-                    const tabGroups = JSON.parse(tabGroupsContent) as BrowserTabGroup;
-                    const settings: Settings = JSON.parse(settingsContent) as Settings;
-                    resolve({
-                        tabGroups: tabGroups,
-                        settings: settings
+                    .then((response) => {
+                        if (response.ok) {
+                            return response.json(); // 解析响应的JSON数据
+                        } else {
+                            throw new Error("根据gistId拉取gist失败了");
+                        }
+                    })
+                    .then((data) => {
+                        const tabGroupsContent = data.files['TabGroups.json'].content;
+                        const settingsContent = data.files['Settings.json'].content;
+                        const tabGroups = JSON.parse(tabGroupsContent) as TabGroup[];
+                        const settings: Settings = JSON.parse(settingsContent) as Settings;
+                        resolve({
+                            tabGroups: tabGroups,
+                            settings: settings
+                        });
+                    })
+                    .catch((error) => {
+                        reject(error);
+                        // alert("根据gistId拉取gist失败了");
+                        console.info(`${chrome.i18n.getMessage("pullFailed")}-->${error.message}`);
                     });
-                })
-                .catch((error) => {
-                    console.error(error);
-                    // alert("根据gistId拉取gist失败了");
-                    console.info(`${chrome.i18n.getMessage("pullFailed")}-->${error.message}`);
-                });
-
+            } else {
+                reject("Need push first.")
+            }
         });
     }
 

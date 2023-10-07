@@ -1,21 +1,95 @@
-import {GithubApi, GiteeApi} from "./gistApi";
-import {saveTabGroup, tabGroupFromTabArr, loadSettings, Settings} from "./storage";
+import {GithubApi, GiteeApi, GistApi} from "./gistApi";
+import {
+    saveTabGroup,
+    loadSettings,
+    Settings,
+    loadAllTabGroup,
+    TabGroup,
+    saveSettings,
+    makeEmptyTabGroup
+} from "./storage";
+
 
 let settings: Settings, githubApi: GithubApi, giteeApi: GiteeApi;
 
-loadSettings().then(s => {
-    settings = s;
-});
 
-chrome.runtime.onMessage.addListener((req, sendRes) => {
+
+function updateWithSettingsValue(s: Settings) {
+    settings = s;
+    githubApi = new GithubApi(settings.githubToken, settings.githubId);
+    giteeApi = new GiteeApi(settings.giteeToken, settings.giteeId);
+    // 检查跟github的通讯是否正常
+    // githubApi.checkCommunicationStatus(checkStatusCallback);
+    // 检查跟gitee的通讯是否正常
+    // giteeApi.checkCommunicationStatus(checkStatusCallback);
+}
+
+// 加载Settings，初始化Api
+loadSettings().then(updateWithSettingsValue);
+
+chrome.runtime.onMessage.addListener((req, _, sendRes) => {
     switch (req.action) {
         case "settings-changed":
-            loadSettings().then(s => {
-                settings = s;
-            });
+            loadSettings().then(updateWithSettingsValue);
             break;
+        case "push-git":
+            if (req.api === githubApi.name) {
+                pushGist(githubApi)
+                    .then(() => sendRes(true))
+                    .catch(() => sendRes(false));
+                break;
+            }
+            if (req.api === giteeApi.name) {
+                pushGist(giteeApi)
+                    .then(() => sendRes(true))
+                    .catch(() => sendRes(false));
+                break;
+            }
+        case "pull-git":
+            if (req.api === githubApi.name) {
+
+            }
     }
 });
+
+function pushGist(api: GistApi) {
+    return new Promise((resolve, reject) => {
+        if (!giteeApi || !giteeApi.gistToken) {
+            reject("No token");
+            return;
+        }
+        loadAllTabGroup().then(
+            tabGroups => {
+                loadSettings().then(settings => {
+                    api.pushData(tabGroups, settings);
+                });
+            }
+        );
+    });
+}
+
+function pullGist(api: GistApi) {
+    // TODO: 提供更明显的提示。
+    if (!giteeApi || !giteeApi.gistToken) {
+        console.error("No token");
+        return;
+    }
+
+    api.pullData().then((r: { tabGroups: TabGroup[], settings: Settings }) => {
+        saveSettings(r.settings).then(() => updateWithSettingsValue(r.settings));
+        for (const group of r.tabGroups) {
+            chrome.storage.local.set({[group.id]: group});
+        }
+        // TODO: 清除Storage中的原有数据。
+        chrome.storage.local.set({tabGroupIds: r.tabGroups.map(x => x.id)}).then(() => {
+            chrome.runtime.sendMessage({action: "tabGroup-changed"});
+        });
+    });
+}
+
+function openOptionsAndPin() {
+    // TODO: Options标签页固定
+}
 
 chrome.action.onClicked.addListener(() => {
     chrome.runtime.openOptionsPage();
@@ -71,12 +145,8 @@ chrome.alarms.onAlarm.addListener(function (alarm) {
 });
 
 function saveTabs(tabsArr: chrome.tabs.Tab[]) {
-    const tab_group = tabGroupFromTabArr(tabsArr.map(tab => ({
-        title: tab.title,
-        url: tab.url,
-        id: tab.id
-    })));
-    saveTabGroup(tab_group);
+    const session = {...makeEmptyTabGroup(), tabs: tabsArr};
+    saveTabGroup(session);
 }
 
 // close all the tabs in the provided array of Tab objects

@@ -5,49 +5,16 @@ import 'bootstrap';
 import {createElement} from "react";
 import {createRoot} from "react-dom/client";
 
-import {GithubApi, GiteeApi, GistApi} from "./gistApi";
-import {exportDefault, importDefault, importOneTab} from "./imports";
+import {exportDefaultCsv, importDefaultCsv, importOneTab} from "./imports";
 import TabsApp from './Apps/TabsApp'
 import SettingsApp from "./Apps/SettingsApp";
-import {
-    BrowserTabGroup,
-    loadAllTabGroup,
-    loadSettings,
-    saveSettings,
-    saveTabGroup,
-    Settings,
-    tabGroupFromTabArr
-} from "./storage";
 
-
-// 加载Settings，初始化Api
-let settings, githubApi: GithubApi, giteeApi: GiteeApi;
-updateWithSettingsChanged();
-
-chrome.runtime.onMessage.addListener((msg: {action: string}) => {
-    switch (msg.action) {
-        case "settings-changed":
-            updateWithSettingsChanged();
-            break;
-    }
-});
-
-export function updateWithSettingsChanged() {
-    loadSettings().then(r => {
-        settings = r;
-        githubApi = new GithubApi(settings.githubToken, settings.githubId);
-        giteeApi = new GiteeApi(settings.giteeToken, settings.giteeId);
-        // 检查跟github的通讯是否正常
-        // githubApi.checkCommunicationStatus(checkStatusCallback);
-        // 检查跟gitee的通讯是否正常
-        // giteeApi.checkCommunicationStatus(checkStatusCallback);
-    });
-}
 
 // Load React App for TabGroups
 const tabsContainerNode = document.getElementById("tabs-container");
 const tabsContainerRoot = createRoot(tabsContainerNode);
 tabsContainerRoot.render(createElement(TabsApp));
+
 // Load React App for Settings
 const settingsContainerNode = document.getElementById("settings-container");
 const settingsContainerRoot = createRoot(settingsContainerNode);
@@ -112,54 +79,24 @@ chrome.storage.local.get(null, function (items) {
 const onetabImportButton = document.getElementById("importOnetabMode");
 onetabImportButton.onclick = importOneTab;
 const defaultImportButton = document.getElementById("importDefaultMode");
-defaultImportButton.onclick = importDefault;
+defaultImportButton.onclick = importDefaultCsv;
 const exportDefaultButton = document.getElementById("exportDefaultMode");
-exportDefaultButton.onclick = exportDefault;
+exportDefaultButton.onclick = exportDefaultCsv;
 
 
 // Handle Gist Push
 const pushGithubButton = document.getElementById("pushToGithubGist");
 const pushGiteeButton = document.getElementById("pushToGiteeGist");
-pushGithubButton.onclick = () => pushGist(githubApi);
-pushGiteeButton.onclick = () => pushGist(giteeApi);
+pushGithubButton.onclick = () => chrome.runtime.sendMessage({action: "push-gist", api: "github"});
+pushGiteeButton.onclick = () => chrome.runtime.sendMessage({action: "push-gist", api: "gitee"});
 
-function pushGist(api: GistApi) {
-    // TODO: 提供更明显的提示。
-    if (!giteeApi || !giteeApi.gistToken) {
-        console.error("No token");
-        return;
-    }
-
-    loadAllTabGroup().then(
-        tabGroups => {
-            loadSettings().then(settings => {
-                api.pushData(tabGroups, settings);
-            });
-        }
-    )
-}
+// TODO: 提供更明显的提示。
 
 // Handle Gist Pull
 const pullGithubButton = document.getElementById("pullFromGithubGist");
 const pullGiteeButton = document.getElementById("pullFromGiteeGist");
-pullGithubButton.onclick = () => pullGist(githubApi);
-pullGiteeButton.onclick = () => pullGist(giteeApi);
+pullGithubButton.onclick = () => chrome.runtime.sendMessage({action: "pull-gist", api: "github"});
+pullGiteeButton.onclick = () => chrome.runtime.sendMessage({action: "pull-gist", api: "gitee"});
 
-function pullGist(api: GistApi) {
-    // TODO: 提供更明显的提示。
-    if (!giteeApi || !giteeApi.gistToken) {
-        console.error("No token");
-        return;
-    }
 
-    api.pullData().then((r: {tabGroups: BrowserTabGroup[], settings: Settings}) => {
-        saveSettings(r.settings);
-        for (const group of r.tabGroups) {
-            chrome.storage.local.set({[group.id]: group});
-        }
-        // TODO: 清除Storage中的原有数据。
-        chrome.storage.local.set({tabGroupIds: r.tabGroups.map(x => x.id)}).then(() => {
-            chrome.runtime.sendMessage({action: "tabGroup-changed"});
-        });
-    });
-}
+

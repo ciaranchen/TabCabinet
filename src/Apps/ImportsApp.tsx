@@ -1,6 +1,7 @@
 import * as React from "react";
-import {importTabGroups, makeEmptyTabGroup, OneTabData, TabGroup} from "../storage";
+import {importTabGroups, loadAllTabGroup, makeEmptyTabGroup, OneTabData, TabGroup} from "../storage";
 import {useState} from "react";
+import {downloadJsonFile} from "../utils";
 
 export function ImportsApp() {
     // TODO: 给更正式的例子
@@ -45,19 +46,38 @@ export function ImportsApp() {
         importTabGroups(tabGroups).then(() => location.reload());
     }
 
-    function importJson() {
+    function handleJsonUpload(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target?.files[0];
 
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result as string);
+                    console.log(importedData);
+                    importTabGroups(importedData).then(() => location.reload());
+                } catch (error) {
+                    console.error('无法解析JSON文件', error);
+                }
+            };
+            reader.readAsText(file);
+        }
     }
 
     function exportJson() {
+        loadAllTabGroup().then(value => downloadJsonFile(value, "TabCabinetData.json"));
+    }
 
+    function importJson() {
+        document.getElementById("importJsonInput").click();
     }
 
     // TODO: 折叠导出格式。
     return (<div className="container" role="main">
         <div id="importOneTab" className="m-3">
             <h3><span className="i18n" title="hideShowImportOnetabFunction"></span></h3>
-            <textarea id="importOnetabTextarea" value={onetabTextAreaValue} onChange={e => setOnetabTextareaValue(e.target.value)}></textarea>
+            <textarea id="importOnetabTextarea" value={onetabTextAreaValue}
+                      onChange={e => setOnetabTextareaValue(e.target.value)}/>
             <div>
                 <button id="importOnetabMode" type="button"
                         className="btn btn-primary"><span className="i18n" title="importToLocal"
@@ -69,12 +89,19 @@ export function ImportsApp() {
 
         <div id="importDefault" className="m-3">
             <h3><span className="i18n" title="hideShowImportDefaultFunction"></span></h3>
-            <button id="importJson" onClick={importJson} className="btn btn-outline-primary">
-                <span className="i18n" title="importJson"></span>
-            </button>
-            <button id="exportJson" onClick={exportJson} className="btn btn-outline-primary">
-                <span className="i18n" title="exportJson"></span>
-            </button>
+
+            <div>
+                <button id="exportJson" type="button" onClick={exportJson} className="btn btn-outline-primary">
+                    <span className="i18n" title="exportJson"></span>
+                </button>
+
+                <button id="importJson" type="button" onClick={importJson} className="btn btn-outline-primary">
+                    <span className="i18n" title="importJson"></span>
+                </button>
+                <input className="form-control" hidden={true} type="file" id="importJsonInput" accept=".json"
+                       onChange={handleJsonUpload}/>
+            </div>
+
         </div>
     </div>)
 }

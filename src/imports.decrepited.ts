@@ -35,7 +35,7 @@ export function importDefaultCsv() {
         }
     }
 
-    importTabGroups(tabGroups).then(location.reload);
+    importTabGroups(tabGroups).then(() => location.reload());
 }
 
 export function exportDefaultCsv() {

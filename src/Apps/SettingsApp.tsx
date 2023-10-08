@@ -1,14 +1,23 @@
 import * as React from 'react';
-import {useEffect, useState} from "react";
+import {forwardRef, useEffect, useImperativeHandle, useState} from "react";
 import {defaultSettings, loadSettings, saveSettings, Settings} from "../storage";
 
 
-export default function SettingsApp() {
+export default function SettingsApp(props: {
+    setGithubPushAvail: (arg0: boolean) => void; setGithubPullAvail: (arg0: boolean) => void;
+    setGiteePushAvail: (arg0: boolean) => void; setGiteePullAvail: (arg0: boolean) => void;
+}) {
     const [settings, setSettings] = useState<Settings>(defaultSettings);
 
     useEffect(() => {
-        loadSettings().then(r => setSettings(r));
-    }, [])
+        loadSettings().then(r => {
+            setSettings(r);
+            props.setGithubPushAvail(r.githubToken !== "");
+            props.setGiteePushAvail(r.giteeToken !== "");
+            props.setGithubPullAvail(r.githubId !== "");
+            props.setGiteePullAvail(r.giteeId !== "");
+        });
+    }, []);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value, type, checked} = event.target;

@@ -14,6 +14,7 @@ export default function TabsApp() {
 
     useEffect(() => {
         function tabGroupsChangedCallback(msg: { action: string }) {
+            console.log(msg.action)
             if (msg.action === "tabGroups-changed") {
                 loadAllTabGroup().then(r => {
                     setTabGroups(r);

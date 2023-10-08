@@ -68,7 +68,9 @@ chrome.runtime.onMessage.addListener((req, _, sendRes) => {
                 .catch(() => sendRes(false));
             break;
         case "pull-gist":
-            pullGist(req.api === githubApi.name ? githubApi : giteeApi);
+            pullGist(req.api === githubApi.name ? githubApi : giteeApi)
+                .then(() => sendRes(true))
+                .catch(() => sendRes(false));
             break;
         case "tabGroup-open":
             if (settings.deleteAfterOpenTabGroup) {
@@ -116,7 +118,7 @@ function pullGist(api: GistApi) {
             }
             // TODO: 清除Storage中的原有数据。
             chrome.storage.local.set({tabGroupIds: r.tabGroups.map(x => x.id)}).then(() => {
-                chrome.runtime.sendMessage({action: "tabGroup-changed"}).then(() => resolve());
+                chrome.runtime.sendMessage({action: "tabGroups-changed"}).then(() => resolve());
             });
         }).catch(reason => reject(reason));
     });
@@ -128,12 +130,29 @@ function autoSync(api: GistApi) {
 }
 
 function openOptionsAndPin() {
-    // TODO: Options标签页固定
+    return new Promise(resolve => {
+        chrome.tabs.query({
+            url: chrome.runtime.getURL('options.html'),
+            currentWindow: true
+        }, function (tabs) {
+            if (tabs.length !== 0) {
+                chrome.tabs.update(tabs[0].id, {
+                    highlighted: true,
+                    pinned: true
+                }).then(resolve);
+            } else {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL('options.html'),
+                    pinned: true
+                }).then(resolve);
+            }
+        });
+    });
 }
 
 chrome.action.onClicked.addListener(() => {
     // TODO: 可设定的点击行为
-    chrome.runtime.openOptionsPage();
+    openOptionsAndPin();
 })
 
 
@@ -201,17 +220,16 @@ chrome.contextMenus.create({
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
     console.log(info, tab);
     if (info.menuItemId === '4') {
-        chrome.runtime.openOptionsPage();
+        openOptionsAndPin();
     } else if (info.menuItemId === '5') { // sendAllTabs
         chrome.tabs.query({
             url: ["https://*/*", "http://*/*"],
             currentWindow: true
         }, function (tabs) {
-            if (tabs.length > 0) {
+            if (tabs.length > 0) { // 为0是因为可能不是以http开头的页面。
                 saveTabs(tabs);
             }
-            chrome.runtime.openOptionsPage();
-            closeTabs(tabs);
+            openOptionsAndPin().then(() => closeTabs(tabs));
         });
     } else if (info.menuItemId === '6' || info.menuItemId === "tabCabinet-SendCurrentTab") { // sendCurrentTab
         chrome.tabs.query({
@@ -223,7 +241,7 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
                 saveTabs(tabs);
             }
             if (settings.openOptionsAfterSendTab) {
-                chrome.runtime.openOptionsPage();
+                openOptionsAndPin();
             }
             closeTabs(tabs);
         });
@@ -236,8 +254,7 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
             if (tabs.length > 0) {
                 saveTabs(tabs);
             }
-            chrome.runtime.openOptionsPage();
-            closeTabs(tabs);
+            openOptionsAndPin().then(() => closeTabs(tabs));
         });
     }
 })

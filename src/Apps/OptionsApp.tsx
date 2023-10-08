@@ -2,8 +2,14 @@ import * as React from "react";
 import TabsApp from "./TabsApp";
 import SettingsApp from "./SettingsApp";
 import {ImportsApp} from "./ImportsApp";
+import {useState} from "react";
 
 export function OptionsApp() {
+    const [githubPushAvail, setGithubPushAvail] = useState(false);
+    const [githubPullAvail, setGithubPullAvail] = useState(false);
+    const [giteePushAvail, setGiteePushAvail] = useState(false);
+    const [giteePullAvail, setGiteePullAvail] = useState(false);
+
     // TODO: 提供更明显的提示。
     return (
         <div>
@@ -68,7 +74,8 @@ export function OptionsApp() {
                                         onClick={() => chrome.runtime.sendMessage({
                                             action: "push-gist",
                                             api: "github"
-                                        })}>
+                                        })}
+                                        disabled={!githubPushAvail}>
                                     <span className="i18n" title="pushToGithubGist"></span>
                                 </button>
                             </div>
@@ -77,19 +84,22 @@ export function OptionsApp() {
                                         onClick={() => chrome.runtime.sendMessage({
                                             action: "pull-gist",
                                             api: "github"
-                                        })}>
+                                        })}
+                                        disabled={!githubPullAvail}>
                                     <span className="i18n" title="pullFromGithubGist"></span>
                                 </button>
                             </div>
                             <div className="col">
                                 <button type="button" className="btn btn-light" id="pushToGiteeGist"
-                                        onClick={() => chrome.runtime.sendMessage({action: "push-gist", api: "gitee"})}>
+                                        onClick={() => chrome.runtime.sendMessage({action: "push-gist", api: "gitee"})}
+                                        disabled={!giteePushAvail}>
                                     <span className="i18n" title="pushToGiteeGist"></span>
                                 </button>
                             </div>
                             <div className="col">
                                 <button type="button" className="btn btn-light" id="pullFromGiteeGist"
-                                        onClick={() => chrome.runtime.sendMessage({action: "pull-gist", api: "gitee"})}>
+                                        onClick={() => chrome.runtime.sendMessage({action: "pull-gist", api: "gitee"})}
+                                        disabled={!giteePullAvail}>
                                     <span className="i18n" title="pullFromGiteeGist"></span>
                                 </button>
                             </div>
@@ -100,7 +110,8 @@ export function OptionsApp() {
 
                 <div className="tab-pane fade m-3" id="settings-tab-pane" role="tabpanel"
                      aria-labelledby="settings-tab">
-                    <SettingsApp/>
+                    <SettingsApp setGithubPushAvail={setGithubPushAvail} setGithubPullAvail={setGithubPullAvail}
+                                 setGiteePushAvail={setGiteePushAvail} setGiteePullAvail={setGiteePullAvail}/>
                 </div>
 
                 <div className="tab-pane fade m-3" id="imports-exports-tab-pane" role="tabpanel"

@@ -463,5 +463,20 @@
 	},
 	"giteeIdPlaceholder": {
 		"message": "填写Gitee Token后出现"
+	},
+	"giteeId": {
+		"message": "Gitee Gist Id"
+	},
+	"githubId": {
+		"message": "Github Gist Id"
+	},
+    "inTimeSync": {
+        "message": "是否实时同步"
+    },
+    "autoSyncInterval": {
+        "message": "自动同步间隔"
+    },
+	"saveSettingsSuccess": {
+		"message": "保存设置成功"
 	}
 }

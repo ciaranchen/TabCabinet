@@ -363,7 +363,7 @@
 		"message": "usedSpace : "
 	},
 	"autoSync": {
-		"message": "open sync"
+		"message": "open Auto Sync"
 	},
 	"noLog": {
 		"message": "No log have been saved yet"
@@ -463,5 +463,20 @@
 	},
 	"giteeIdPlaceholder": {
 		"message": "Appears after filling in the Gitee Token"
+	},
+	"giteeId": {
+		"message": "Gitee Gist Id"
+	},
+	"githubId": {
+		"message": "Github Gist Id"
+	},
+	"inTimeSync": {
+		"message": "Open Sync in time"
+	},
+	"autoSyncInterval": {
+		"message": "Auto sync interval"
+	},
+	"saveSettingsSuccess": {
+		"message": "Save Settings Successful."
 	}
 }

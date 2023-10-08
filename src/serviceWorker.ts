@@ -15,6 +15,8 @@ let old_autoSync: boolean, old_autoSyncInterval: number;
 
 
 function updateWithSettingsValue(s: Settings) {
+    console.log("update with new settings ...")
+    console.log(s);
     settings = s;
     githubApi = new GithubApi(settings.githubToken, settings.githubId);
     giteeApi = new GiteeApi(settings.giteeToken, settings.giteeId);
@@ -58,9 +60,12 @@ loadSettings().then(updateWithSettingsValue);
 
 
 chrome.runtime.onMessage.addListener((req, _, sendRes) => {
+    console.log(req.action);
     switch (req.action) {
         case "settings-changed":
-            loadSettings().then(updateWithSettingsValue);
+            loadSettings().then(updateWithSettingsValue).then(() => {
+                inTimeSync();
+            });
             break;
         case "push-gist":
             pushGist(req.api === githubApi.name ? githubApi : giteeApi)
@@ -78,24 +83,37 @@ chrome.runtime.onMessage.addListener((req, _, sendRes) => {
             }
             break;
         case "tabGroup-app-closed":
-            if (settings.inTimeSync) {
-                autoSync(githubApi);
-                autoSync(giteeApi);
-            }
+            inTimeSync();
             break;
     }
 });
 
+function inTimeSync() {
+    if (settings.inTimeSync) {
+        autoSyncWrapper(githubApi, "实时同步", `${githubApi.name}同步成功`, `${githubApi.name}同步失败`);
+        autoSyncWrapper(giteeApi, "实时同步", `${giteeApi.name}同步成功`, `${giteeApi.name}同步失败`);
+    }
+}
+
+function autoSyncWrapper(gistApi: GithubApi | GiteeApi, headerText: string, successText: string, failedText: string) {
+    autoSync(githubApi)
+        .then(() => chrome.runtime.sendMessage({action: "show-toast", headerText: headerText, bodyText: successText}))
+        .catch(() => chrome.runtime.sendMessage({action: "show-toast", headerText: headerText, bodyText: failedText}));
+}
+
 function pushGist(api: GistApi) {
     return new Promise<void>((resolve, reject) => {
-        if (!giteeApi || !giteeApi.gistToken) {
+        console.log(api);
+        if (!api || !api.gistToken) {
             reject("No token");
             return;
         }
         loadAllTabGroup().then(
             tabGroups => {
                 loadSettings().then(settings => {
-                    api.pushData(tabGroups, settings).then(() => resolve());
+                    api.pushData(tabGroups, settings)
+                        .then(() => resolve())
+                        .catch(() => reject());
                 });
             }
         );
@@ -126,7 +144,9 @@ function pullGist(api: GistApi) {
 
 function autoSync(api: GistApi) {
     // TODO: 冲突处理。
-    return pushGist(api);
+    return new Promise((resolve, reject) => {
+        pushGist(api).then(resolve).catch(reject);
+    });
 }
 
 function openOptionsAndPin() {

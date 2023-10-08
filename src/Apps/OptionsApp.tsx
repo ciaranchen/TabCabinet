@@ -3,12 +3,37 @@ import TabsApp from "./TabsApp";
 import SettingsApp from "./SettingsApp";
 import {ImportsApp} from "./ImportsApp";
 import {useState} from "react";
+import {useToasts} from 'react-bootstrap-toasts';
 
 export function OptionsApp() {
     const [githubPushAvail, setGithubPushAvail] = useState(false);
     const [githubPullAvail, setGithubPullAvail] = useState(false);
     const [giteePushAvail, setGiteePushAvail] = useState(false);
     const [giteePullAvail, setGiteePullAvail] = useState(false);
+
+
+    // handle toast from serviceWorker.
+    const toasts = useToasts();
+    chrome.runtime.onMessage.addListener((message) => {
+        console.log(message.action);
+        if (message.action === "show-toast") {
+            toasts.show({
+                headerContent: <span className="me-auto">message.headerText</span>,
+                bodyContent: message.bodyText
+            });
+        }
+    });
+
+    function handleGistButton(api_name: string, action: string) {
+        chrome.runtime.sendMessage({action: `${action}-gist`, api: api_name}, {}, (res) => {
+            console.log(res);
+            // TODO: fix this.
+            if (res) {
+
+            } else {
+            }
+        });
+    }
 
     // TODO: 提供更明显的提示。
     return (
@@ -71,34 +96,28 @@ export function OptionsApp() {
                         <div className="row">
                             <div className="col">
                                 <button type="button" className="btn btn-light" id="pushToGithubGist"
-                                        onClick={() => chrome.runtime.sendMessage({
-                                            action: "push-gist",
-                                            api: "github"
-                                        })}
+                                        onClick={() => handleGistButton("github", "push")}
                                         disabled={!githubPushAvail}>
                                     <span className="i18n" title="pushToGithubGist"></span>
                                 </button>
                             </div>
                             <div className="col">
                                 <button type="button" className="btn btn-light" id="pullFromGithubGist"
-                                        onClick={() => chrome.runtime.sendMessage({
-                                            action: "pull-gist",
-                                            api: "github"
-                                        })}
+                                        onClick={() => handleGistButton("github", "pull")}
                                         disabled={!githubPullAvail}>
                                     <span className="i18n" title="pullFromGithubGist"></span>
                                 </button>
                             </div>
                             <div className="col">
                                 <button type="button" className="btn btn-light" id="pushToGiteeGist"
-                                        onClick={() => chrome.runtime.sendMessage({action: "push-gist", api: "gitee"})}
+                                        onClick={() => handleGistButton("gitee", "push")}
                                         disabled={!giteePushAvail}>
                                     <span className="i18n" title="pushToGiteeGist"></span>
                                 </button>
                             </div>
                             <div className="col">
                                 <button type="button" className="btn btn-light" id="pullFromGiteeGist"
-                                        onClick={() => chrome.runtime.sendMessage({action: "pull-gist", api: "gitee"})}
+                                        onClick={() => handleGistButton("gitee", "pull")}
                                         disabled={!giteePullAvail}>
                                     <span className="i18n" title="pullFromGiteeGist"></span>
                                 </button>

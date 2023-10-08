@@ -1,6 +1,7 @@
 import * as React from 'react';
-import {forwardRef, useEffect, useImperativeHandle, useState} from "react";
+import {useEffect, useState} from "react";
 import {defaultSettings, loadSettings, saveSettings, Settings} from "../storage";
+import {useToasts} from "react-bootstrap-toasts";
 
 
 export default function SettingsApp(props: {
@@ -21,16 +22,26 @@ export default function SettingsApp(props: {
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value, type, checked} = event.target;
+        let finalValue: string | boolean | number;
+        if (name === 'autoSyncInterval') {
+            finalValue = parseInt(value);
+        } else {
+            finalValue =  type === 'checkbox' ? checked : value
+        }
         setSettings((prevState) => ({
             ...prevState,
-            [name]: type === 'checkbox' ? checked : value,
+            [name]: finalValue,
         }));
     }
 
+    const toasts = useToasts();
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
         // 将数据保存至storage
-        saveSettings(settings);
+        saveSettings(settings).then(() => toasts.show({
+            headerContent: <span className="me-auto">{chrome.i18n.getMessage("Settings")}</span>,
+            bodyContent: chrome.i18n.getMessage("saveSettingsSuccess")
+        }));
     }
 
     return (<div className="container">
@@ -112,7 +123,7 @@ export default function SettingsApp(props: {
                     <span className="i18n" title="autoSyncInterval"></span></label>
                 <div className="col-sm-5">
                     <input type="number" min="1" className="form-control" id="autoSyncInterval"
-                           name="autoSyncInterval" onChange={handleInputChange} value={settings.autoSyncInterval}/>
+                           name="autoSyncInterval" onChange={handleInputChange} value={settings.autoSyncInterval.toString()}/>
                 </div>
             </div>
 

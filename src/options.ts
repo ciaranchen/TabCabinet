@@ -7,6 +7,7 @@ import {createRoot} from "react-dom/client";
 import {OptionsApp} from "./Apps/OptionsApp";
 import {ToastsProvider as BootstrapToastsProvider} from 'react-bootstrap-toasts';
 
+
 const reactAppNode = document.getElementById("react-app");
 const reactAppRoot = createRoot(reactAppNode);
 reactAppRoot.render(createElement(BootstrapToastsProvider, {
@@ -14,6 +15,7 @@ reactAppRoot.render(createElement(BootstrapToastsProvider, {
     toastContainerProps: { position: 'bottom-end', className: 'm-3'},
     limit: 5
 }));
+
 
 document.addEventListener('DOMContentLoaded', function () {
     // 处理i18n字串

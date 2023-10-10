@@ -2,7 +2,7 @@ import * as React from "react";
 import TabsApp from "./TabsApp";
 import SettingsApp from "./SettingsApp";
 import {ImportsApp} from "./ImportsApp";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useToasts} from 'react-bootstrap-toasts';
 
 export function OptionsApp() {
@@ -14,24 +14,38 @@ export function OptionsApp() {
 
     // handle toast from serviceWorker.
     const toasts = useToasts();
-    chrome.runtime.onMessage.addListener((message) => {
-        console.log(message.action);
-        if (message.action === "show-toast") {
-            toasts.show({
-                headerContent: <span className="me-auto">message.headerText</span>,
-                bodyContent: message.bodyText
-            });
+    useEffect(() => {
+        function handleToastMsg(message: { action: string; headerText: string; bodyText: string; }) {
+            console.log(message.action);
+            if (message.action === "show-toast") {
+                toasts.show({
+                    headerContent: <span className="me-auto">{message.headerText}</span>,
+                    bodyContent: message.bodyText
+                });
+            }
         }
-    });
+
+        chrome.runtime.onMessage.addListener(handleToastMsg);
+        return () => chrome.runtime.onMessage.removeListener(handleToastMsg);
+    }, []);
+
 
     function handleGistButton(api_name: string, action: string) {
-        chrome.runtime.sendMessage({action: `${action}-gist`, api: api_name}, {}, (res) => {
-            console.log(res);
-            // TODO: fix this.
-            if (res) {
-
-            } else {
-            }
+        // TODO: show button name
+        chrome.runtime.sendMessage({action: `${action}-gist`, api: api_name}, function (actionPromise: Promise<void>) {
+            actionPromise
+                .then(() => {
+                    toasts.show({
+                        headerContent: <span className="me-auto">按钮</span>,
+                        bodyContent: chrome.i18n.getMessage("updateSuccess")
+                    });
+                })
+                .catch((reason) => {
+                    toasts.show({
+                        headerContent: <span className="me-auto">按钮</span>,
+                        bodyContent: chrome.i18n.getMessage("updateFailed") + reason
+                    });
+                });
         });
     }
 

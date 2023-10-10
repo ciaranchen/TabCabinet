@@ -8,6 +8,7 @@ import {
     saveSettings,
     makeEmptyTabGroup, deleteTabGroup
 } from "./storage";
+// TODO: 自动同步时显示系统通知而非浏览器内通知。
 
 
 let settings: Settings, githubApi: GithubApi, giteeApi: GiteeApi;
@@ -24,13 +25,13 @@ function updateWithSettingsValue(s: Settings) {
     if (s.autoSync && (old_autoSync !== s.autoSync || old_autoSyncInterval !== s.autoSyncInterval)) {
         chrome.alarms.clear("checkAutoSyncGithub", () => {
             if (githubApi.gistToken && githubApi.gistToken.length !== 0) {
-                autoSync(githubApi);
+                autoSyncWrapper(githubApi, "自动同步", `${githubApi.name}同步成功`, `${githubApi.name}同步失败`);
                 chrome.alarms.create("checkAutoSyncGithub", {periodInMinutes: settings.autoSyncInterval});
             }
         });
         chrome.alarms.clear("checkAutoSyncGitee", () => {
             if (giteeApi.gistToken && giteeApi.gistToken.length !== 0) {
-                autoSync(giteeApi);
+                autoSyncWrapper(giteeApi, "自动同步", `${giteeApi.name}同步成功`, `${giteeApi.name}同步失败`);
                 chrome.alarms.create("checkAutoSyncGitee", {periodInMinutes: settings.autoSyncInterval});
             }
         });
@@ -46,11 +47,11 @@ chrome.alarms.onAlarm.addListener(function (alarm) {
     switch (alarm.name) {
         case "checkAutoSyncGitee":
             console.log("自动同步gitee")
-            autoSync(giteeApi);
+            autoSyncWrapper(giteeApi, "自动同步", `${giteeApi.name}同步成功`, `${giteeApi.name}同步失败`);
             break;
         case "checkAutoSyncGithub":
             console.log("自动同步github")
-            autoSync(githubApi);
+            autoSyncWrapper(githubApi, "自动同步", `${githubApi.name}同步成功`, `${githubApi.name}同步失败`);
             break;
     }
 });
@@ -64,18 +65,14 @@ chrome.runtime.onMessage.addListener((req, _, sendRes) => {
     switch (req.action) {
         case "settings-changed":
             loadSettings().then(updateWithSettingsValue).then(() => {
-                inTimeSync();
+                realTimeSync();
             });
             break;
         case "push-gist":
-            pushGist(req.api === githubApi.name ? githubApi : giteeApi)
-                .then(() => sendRes(true))
-                .catch(() => sendRes(false));
+            sendRes(pushGist(req.api === githubApi.name ? githubApi : giteeApi));
             break;
         case "pull-gist":
-            pullGist(req.api === githubApi.name ? githubApi : giteeApi)
-                .then(() => sendRes(true))
-                .catch(() => sendRes(false));
+            sendRes(pullGist(req.api === githubApi.name ? githubApi : giteeApi));
             break;
         case "tabGroup-open":
             if (settings.deleteAfterOpenTabGroup) {
@@ -83,12 +80,12 @@ chrome.runtime.onMessage.addListener((req, _, sendRes) => {
             }
             break;
         case "tabGroup-app-closed":
-            inTimeSync();
+            realTimeSync();
             break;
     }
 });
 
-function inTimeSync() {
+function realTimeSync() {
     if (settings.inTimeSync) {
         autoSyncWrapper(githubApi, "实时同步", `${githubApi.name}同步成功`, `${githubApi.name}同步失败`);
         autoSyncWrapper(giteeApi, "实时同步", `${giteeApi.name}同步成功`, `${giteeApi.name}同步失败`);
@@ -96,9 +93,13 @@ function inTimeSync() {
 }
 
 function autoSyncWrapper(gistApi: GithubApi | GiteeApi, headerText: string, successText: string, failedText: string) {
-    autoSync(githubApi)
+    autoSync(gistApi)
         .then(() => chrome.runtime.sendMessage({action: "show-toast", headerText: headerText, bodyText: successText}))
-        .catch(() => chrome.runtime.sendMessage({action: "show-toast", headerText: headerText, bodyText: failedText}));
+        .catch((reason) => chrome.runtime.sendMessage({
+            action: "show-toast",
+            headerText: headerText,
+            bodyText: failedText + reason
+        }));
 }
 
 function pushGist(api: GistApi) {
@@ -195,8 +196,7 @@ function saveTabs(tabsArr: chrome.tabs.Tab[]) {
     const session = {...makeEmptyTabGroup(), tabs: tabsArr};
     saveTabGroup(session).then(() => {
         if (settings.inTimeSync) {
-            autoSync(githubApi);
-            autoSync(giteeApi);
+            realTimeSync();
         }
     });
 }
@@ -213,29 +213,30 @@ function closeTabs(tabsArr: chrome.tabs.Tab[]) {
 }
 
 
-// 创建页面中的右键菜单，发送当前tab
-chrome.contextMenus.create({
-    id: "tabCabinet-SendCurrentTab", title: `${chrome.i18n.getMessage("sendCurrentTab")}`,
+chrome.runtime.onInstalled.addListener(() => {
+    // 创建页面中的右键菜单，发送当前tab
+    chrome.contextMenus.create({
+        id: "tabCabinet-SendCurrentTab", title: `${chrome.i18n.getMessage("sendCurrentTab")}`,
+    });
+
+    chrome.contextMenus.create({
+        id: "4", title: `${chrome.i18n.getMessage("showAllTabs")}`, contexts: ["action"]
+    });
+
+    chrome.contextMenus.create({
+        id: "5", title: `${chrome.i18n.getMessage("sendAllTabs")}`, contexts: ["action"]
+    });
+
+
+    chrome.contextMenus.create({
+        id: "6", title: `${chrome.i18n.getMessage("sendCurrentTab")}`, contexts: ["action"]
+    });
+
+
+    chrome.contextMenus.create({
+        id: "7", title: `${chrome.i18n.getMessage("sendOtherTabs")}`, contexts: ["action"]
+    });
 });
-
-chrome.contextMenus.create({
-    id: "4", title: `${chrome.i18n.getMessage("showAllTabs")}`, contexts: ["action"]
-});
-
-chrome.contextMenus.create({
-    id: "5", title: `${chrome.i18n.getMessage("sendAllTabs")}`, contexts: ["action"]
-});
-
-
-chrome.contextMenus.create({
-    id: "6", title: `${chrome.i18n.getMessage("sendCurrentTab")}`, contexts: ["action"]
-});
-
-
-chrome.contextMenus.create({
-    id: "7", title: `${chrome.i18n.getMessage("sendOtherTabs")}`, contexts: ["action"]
-});
-
 
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
     console.log(info, tab);
@@ -277,6 +278,4 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
             openOptionsAndPin().then(() => closeTabs(tabs));
         });
     }
-})
-;
-
+});
